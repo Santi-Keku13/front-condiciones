@@ -1,0 +1,61 @@
+/* Importamos la tipografía redondeada para la marca */
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@600;800&display=swap');
+
+.appContainer {
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: #ffffff;
+}
+
+/* --- LOGO ENCABEZADO CORPORATIVO --- */
+.mainHeader {
+  background-color: #ffffff;
+  padding: 30px 20px;
+  text-align: center;
+  border-bottom: 4px solid #C41E3A; /* Línea de base Roja Blow Max */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mainTitle {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 5rem;
+  color: #C41E3A; /* Rojo Corporativo */
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.mainSubtitle {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.8rem;
+  color: #EAB308; /* Amarillo vibrante para fondo blanco */
+  margin: 8px 0 0 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.mainContent {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- OPTIMIZACIÓN RESPONSIVA PARA EL LOGO --- */
+@media (max-width: 768px) {
+  .mainHeader {
+    padding: 20px 10px;
+  }
+  .mainTitle {
+    font-size: 3.5rem;
+    letter-spacing: -1px;
+  }
+  .mainSubtitle {
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+  }
+}

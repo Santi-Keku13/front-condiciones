@@ -1,0 +1,103 @@
+.loginWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 20px;
+  background-color: #ffffff;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 420px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #fee2e2;
+  overflow: hidden;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.loginHeader {
+  background-color: #C41E3A; /* Rojo Corporativo Blow Max */
+  padding: 30px 20px;
+  text-align: center;
+  border-bottom: 4px solid #EAB308; /* Línea Amarilla Blow Max */
+}
+
+.loginHeader h2 {
+  font-family: 'Quicksand', sans-serif;
+  color: #ffffff;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: '1px';
+}
+
+.loginHeader p {
+  margin: 5px 0 0 0;
+  color: #fee2e2;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.loginForm {
+  padding: 30px 25px;
+}
+
+.errorAlert {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 14px;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  transition: background-color 0.2s, transform 0.1s;
+  box-shadow: 0 4px 6px -1px rgba(196, 30, 58, 0.2);
+}
+
+.submitButtonActive {
+  background-color: #C41E3A;
+  cursor: pointer;
+}
+
+.submitButtonActive:hover {
+  background-color: #a0182e;
+}
+
+.submitButtonActive:active {
+  transform: scale(0.98);
+}
+
+.submitButtonDisabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.footerText {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Animación de entrada para que aparezca suavemente */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
