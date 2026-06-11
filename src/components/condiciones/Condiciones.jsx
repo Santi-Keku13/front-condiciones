@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styles from './Condiciones.module.css';
-import CambiosPrecios from '../cambiosPrecios/CambiosPrecios'; // <--- IMPORTAMOS TU NUEVO COMPONENTE
+import CambiosPrecios from '../cambiosPrecios/CambiosPrecios'; 
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');
@@ -30,8 +30,8 @@ function Condiciones() {
   useEffect(() => {
     setCargando(true);
     Promise.all([
-      fetch("https://combinations-communicate-circles-pools.trycloudflare.com/api/condiciones").then(res => res.json()),
-      fetch("https://combinations-communicate-circles-pools.trycloudflare.com/api/cambios-precios").then(res => res.json()).catch(() => [])
+      fetch("https://subsequent-military-mens-vitamin.trycloudflare.com/api/condiciones").then(res => res.json()),
+      fetch("https://subsequent-military-mens-vitamin.trycloudflare.com/api/cambios-precios").then(res => res.json()).catch(() => [])
     ])
     .then(([dataCondiciones, dataPrecios]) => {
       setDatosCondiciones(dataCondiciones);
@@ -87,13 +87,19 @@ function Condiciones() {
     };
   };
 
-  // Filtrado en RAM Pestaña 1
+  // Filtrado en RAM Pestaña 1 (Ajustado al Desglose del Backend)
   const condicionesFiltradas = useMemo(() => {
     let res = [...datosCondiciones];
     const termino = busquedaInput.toLowerCase().trim();
 
     if (termino) {
-      res = res.filter(i => i.IDCondicionComercial?.toString().includes(termino) || i.Descripcion?.toLowerCase().includes(termino) || i.PLU?.toString().includes(termino));
+      res = res.filter(i => 
+        i.IDCondicionComercial?.toString().includes(termino) || 
+        i.IDArticuloReal?.toString().includes(termino) ||
+        i.Descripcion?.toLowerCase().includes(termino) || 
+        i.DescripcionCondicion?.toLowerCase().includes(termino) ||
+        i.ScannerReal?.toString().includes(termino)
+      );
     }
     if (filtroEstado !== 'TODOS') {
       res = res.filter(i => obtenerEstadoVigencia(i.VigenciaHasta).id === filtroEstado);
@@ -114,7 +120,7 @@ function Condiciones() {
   return (
     <div className={styles.container}>
       
-      {/* --- SELECTOR DE PESTAÑAS (ESTILO TEXTO SUBRAYADO CORRECCIONAL) --- */}
+      {/* --- SELECTOR DE PESTAÑAS --- */}
       <div className={styles.tabsContainer}>
         <button 
           onClick={() => setPestanaActiva('CONDICIONES')}
@@ -145,7 +151,7 @@ function Condiciones() {
             </div>
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>🔍 Buscar Artículo:</label>
-              <input type="text" placeholder="ID, descripción o scanner..." className={styles.searchInput} value={busquedaInput} onChange={(e) => setBusquedaInput(e.target.value)} />
+              <input type="text" placeholder="ID Condición, ID Artículo, nombre o scanner..." className={styles.searchInput} value={busquedaInput} onChange={(e) => setBusquedaInput(e.target.value)} />
             </div>
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>🚦 Filtra por Estados:</label>
@@ -196,9 +202,12 @@ function Condiciones() {
                   const calc = calcularPrecioSucursal(item, sucursal);
                   return (
                     <tr key={idx} className={styles.tr} onClick={() => setModalData({ type: 'CONDICION', data: item, calc })}>
+                      {/* Mostramos el ID de la Condición Comercial */}
                       <td className={styles.td}>{item.IDCondicionComercial}</td>
-                      <td className={styles.td} style={{fontFamily: 'monospace'}}>{item.PLU || '—'}</td>
-                      <td className={`${styles.td} ${styles.tdBold}`}>{item.Descripcion}</td>
+                      {/* Mostramos el Scanner individual del Artículo */}
+                      <td className={styles.td} style={{fontFamily: 'monospace'}}>{item.ScannerReal || '—'}</td>
+                      {/* Mostramos la descripción propia del Artículo desglosado */}
+                      <td className={`${styles.td} ${styles.tdBold}`}>{item.Descripcion || item.DescripcionCondicion}</td>
                       <td className={styles.td} style={{textAlign: 'center'}}>{item.Desde} un.</td>
                       <td className={styles.td} style={{color: '#d97706', fontWeight: 'bold'}}>{item.PorDescRec}%</td>
                       <td className={styles.td} style={{fontSize: '0.85rem'}}>
@@ -228,7 +237,7 @@ function Condiciones() {
         </>
       )}
 
-      {/* --- CONTENIDO DE PESTAÑA 2: INSTANCIAMOS EL NUEVO COMPONENTE APARTE --- */}
+      {/* --- CONTENIDO DE PESTAÑA 2 --- */}
       {pestanaActiva === 'CAMBIOS_DIA' && (
         <CambiosPrecios 
           datosPrecios={datosPrecios} 
@@ -250,8 +259,10 @@ function Condiciones() {
               <div className={styles.modalBlockFull}>
                 <div className={styles.modalBlockLabel}>Artículo Comercial</div>
                 <div className={styles.modalBlockValue}>
-                  {modalData.data.Descripcion} 
-                  <span className={styles.badgePlu}>Ref: {modalData.data.PLU || modalData.data.Scanner || '—'}</span>
+                  {modalData.data.Descripcion || modalData.data.DescripcionCondicion} 
+                  <span className={styles.badgePlu}>
+                    ID Art: {modalData.data.IDArticuloReal || '—'} | Ref PLU: {modalData.data.ScannerReal || modalData.data.PLU || '—'}
+                  </span>
                 </div>
               </div>
               
