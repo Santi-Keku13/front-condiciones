@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styles from './Condiciones.module.css';
 import CambiosPrecios from '../cambiosPrecios/CambiosPrecios'; 
+import { useNotification } from '../../utilidades/useNotification';
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');
+  const { showToast, NotificationComponent } = useNotification(); // <-- INICIALIZA EL HOOK
 
   // Estados Datos
   const [datosCondiciones, setDatosCondiciones] = useState([]);
@@ -15,7 +17,7 @@ function Condiciones() {
   const [busquedaInput, setBusquedaInput] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
   const [sucursal, setSucursal] = useState('ALAMEDA');
-  const [filtroLista, setFiltroLista] = useState('TODAS'); // <--- NUEVO ESTADO PARA EL FILTRO DE LISTAS
+  const [filtroLista, setFiltroLista] = useState('TODAS');
   const [tipoFiltroFecha, setTipoFiltroFecha] = useState('FechaModif');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
@@ -31,24 +33,33 @@ function Condiciones() {
   useEffect(() => {
     setCargando(true);
     Promise.all([
-      fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/condiciones").then(res => res.json()),
-      fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/cambios-precios").then(res => res.json()).catch(() => [])
+      fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/condiciones").then(res => {
+        if (!res.ok) throw new Error("Error cargando condiciones");
+        return res.json();
+      }),
+      fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/cambios-precios").then(res => {
+        if (!res.ok) throw new Error("Error cargando cambios de precios");
+        return res.json();
+      }).catch(() => [])
     ])
     .then(([dataCondiciones, dataPrecios]) => {
       setDatosCondiciones(dataCondiciones);
       setDatosPrecios(dataPrecios);
       setCargando(false);
+      // 🌟 CARTEL PROFESIONAL DE ÉXITO AL CARGAR
+      showToast("Sincronización Exitosa", "Los datos comerciales de Blow Max se han actualizado correctamente.", "success");
     })
     .catch((err) => {
       setError(err.message);
       setCargando(false);
+      // 🌟 CARTEL PROFESIONAL DE ERROR
+      showToast("Error de Conexión", `No se pudieron obtener los datos de la sucursal: ${err.message}`, "error", 6000);
     });
-  }, []);
+  }, [showToast]);
 
-  // Reiniciar paginación al cambiar cualquier filtro
   useEffect(() => {
     setPaginaActual(1);
-  }, [busquedaInput, filtroEstado, filtroLista, fechaDesde, fechaHasta, tipoFiltroFecha, sucursal, pestanaActiva]); // <--- AGREGADO filtroLista AQUÍ
+  }, [busquedaInput, filtroEstado, filtroLista, fechaDesde, fechaHasta, tipoFiltroFecha, sucursal, pestanaActiva]);
 
   // Lógica Semáforo Pestaña 1
   const obtenerEstadoVigencia = (fechaLimite) => {
@@ -89,12 +100,10 @@ function Condiciones() {
     };
   };
 
-  // Filtrado en RAM Pestaña 1
   const condicionesFiltradas = useMemo(() => {
     let res = [...datosCondiciones];
     const termino = busquedaInput.toLowerCase().trim();
 
-    // 1. Filtro por término de búsqueda
     if (termino) {
       res = res.filter(i => 
         i.IDCondicionComercial?.toString().includes(termino) || 
@@ -104,21 +113,15 @@ function Condiciones() {
         i.ScannerReal?.toString().includes(termino)
       );
     }
-
-    // 2. Filtro por Estado de Vigencia
     if (filtroEstado !== 'TODOS') {
       res = res.filter(i => obtenerEstadoVigencia(i.VigenciaHasta).id === filtroEstado);
     }
-
-    // 3. 🌟 NUEVO FILTRO: Filtrado por la Lista recalculada según Sucursal
     if (filtroLista !== 'TODAS') {
       res = res.filter(i => {
         const calc = calcularPrecioSucursal(i, sucursal);
         return calc.lista === filtroLista;
       });
     }
-
-    // 4. Filtros por rango de fechas
     if (fechaDesde) res = res.filter(i => i[tipoFiltroFecha] && i[tipoFiltroFecha].substring(0, 10) >= fechaDesde);
     if (fechaHasta) res = res.filter(i => i[tipoFiltroFecha] && i[tipoFiltroFecha].substring(0, 10) <= fechaHasta);
     
@@ -128,7 +131,7 @@ function Condiciones() {
       total: res.length,
       paginados: res.slice((paginaActual - 1) * filasPorPagina, paginaActual * filasPorPagina)
     };
-  }, [datosCondiciones, busquedaInput, filtroEstado, filtroLista, fechaDesde, fechaHasta, tipoFiltroFecha, paginaActual, sucursal]); // <--- AGREGADOS filtroLista Y sucursal AL DEPENDENCY ARRAY
+  }, [datosCondiciones, busquedaInput, filtroEstado, filtroLista, fechaDesde, fechaHasta, tipoFiltroFecha, paginaActual, sucursal]);
 
   const totalPaginasP1 = Math.ceil(condicionesFiltradas.total / filasPorPagina);
 
@@ -157,15 +160,16 @@ function Condiciones() {
           <div className={styles.filterPanel}>
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>🏢 Sucursal:</label>
-              <select className={styles.selectDropdown} value={sucursal} onChange={(e) => setSucursal(e.target.value)}>
+              <select className={styles.selectDropdown} value={sucursal} onChange={(e) => {
+                setSucursal(e.target.value);
+                showToast("Sucursal cambiada", `Ahora viendo los precios aplicados a ${e.target.value}`, "info");
+              }}>
                 <option value="ALAMEDA"> Alameda (L12 ➔ L5)</option>
                 <option value="ALBERDI"> Alberdi (L15 ➔ L12 ➔ L5)</option>
                 <option value="ACCESO"> Acceso (L14 ➔ L12 ➔ L5)</option>
                 <option value="BASTILLA"> Bastilla (L7 ➔ L12 ➔ L5)</option>
               </select>
             </div>
-
-            {/* 🌟 NUEVO SELECTOR PARA FILTRAR POR LISTA */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>📋 Lista de Precios:</label>
               <select className={styles.selectDropdown} value={filtroLista} onChange={(e) => setFiltroLista(e.target.value)}>
@@ -177,10 +181,9 @@ function Condiciones() {
                 <option value="Lista 15">Lista 15</option>
               </select>
             </div>
-
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>🔍 Buscar Artículo:</label>
-              <input type="text" placeholder="ID Condición, ID Artículo, nombre o scanner..." className={styles.searchInput} value={busquedaInput} onChange={(e) => setBusquedaInput(e.target.value)} />
+              <input type="text" placeholder="ID Condición, ID Artículo..." className={styles.searchInput} value={busquedaInput} onChange={(e) => setBusquedaInput(e.target.value)} />
             </div>
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>🚦 Filtra por Estados:</label>
@@ -278,7 +281,7 @@ function Condiciones() {
         <div className={styles.modalOverlay} onClick={() => setModalData(null)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2>{modalData.type === 'CONDICION' ? `Ficha Condición - ${sucursal}` : 'Auditoría de Cambio de Precios'}</h2>
+              <h2>{modalData.type === 'CONDICION' ? `Ficha Condición - ${sucursal}` : 'Auditoría de Cambio de Precio'}</h2>
               <button className={styles.closeButton} onClick={() => setModalData(null)}>×</button>
             </div>
             <div className={styles.modalBody}>
@@ -287,7 +290,7 @@ function Condiciones() {
                 <div className={styles.modalBlockValue}>
                   {modalData.data.Descripcion || modalData.data.DescripcionCondicion} 
                   <span className={styles.badgePlu}>
-                    ID Art: {modalData.data.IDArticuloReal || '—'} | Ref PLU: {modalData.data.ScannerReal || modalData.data.PLU || '—'}
+                    PLU Art: {modalData.data.IDArticuloReal || '—'} | Ref Scanner: {modalData.data.ScannerReal || modalData.data.PLU || '—'}
                   </span>
                 </div>
               </div>
@@ -311,6 +314,9 @@ function Condiciones() {
           </div>
         </div>
       )}
+
+      {/* 🌟 AQUÍ SE RENDERIZA EL CONTENEDOR FLOTANTE DE NOTIFICACIONES */}
+      <NotificationComponent />
 
     </div>
   );
