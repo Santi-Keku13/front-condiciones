@@ -290,7 +290,8 @@ function Condiciones() {
                 <div className={styles.modalBlockValue}>
                   {modalData.data.Descripcion || modalData.data.DescripcionCondicion} 
                   <span className={styles.badgePlu}>
-                    PLU Art: {modalData.data.IDArticuloReal || '—'} | Ref Scanner: {modalData.data.ScannerReal || modalData.data.PLU || '—'}
+                    ID Art: {modalData.data.IDArticuloReal || modalData.data.IDArticulo || modalData.data.IDCondicionComercial || '—'} | 
+                    Ref Scanner: {modalData.data.ScannerReal || modalData.data.Scanner || modalData.data.PLU || '—'}
                   </span>
                 </div>
               </div>
@@ -305,7 +306,7 @@ function Condiciones() {
               ) : (
                 <div className={styles.modalGrid}>
                   <div className={styles.modalBlock}><div className={styles.modalBlockLabel}>Familia / Depto</div><div className={styles.modalBlockValue} style={{fontSize:'0.85rem'}}>{modalData.data.Familia} / {modalData.data.Departamento}</div></div>
-                  <div className={styles.modalBlock}><div className={styles.modalBlockLabel}>N° Lista SQL</div><div className={styles.modalBlockValue}>Lista {modalData.data.Lista}</div></div>
+                  <div className={styles.modalBlock}><div className={styles.modalBlockLabel}>N° Lista </div><div className={styles.modalBlockValue}>Lista {modalData.data.Lista}</div></div>
                   <div className={styles.modalBlock}><div className={styles.modalBlockLabel}>Hora del Cambio</div><div className={styles.modalBlockValue}>{new Date(modalData.data.FechaPrecio).toLocaleTimeString('es-AR')} hs</div></div>
                   <div className={styles.modalBlock}><div className={styles.modalBlockLabel}>Precio Venta Final</div><div className={styles.modalPrecioDestacado} style={{color: '#16a34a'}}>${modalData.data.PrecioVentaTotal}</div></div>
                 </div>
