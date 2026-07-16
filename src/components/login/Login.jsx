@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styles from './Login.module.css'; 
+import { useNotification } from '../../utilidades/useNotification';
 import stylesCondiciones from '../condiciones/Condiciones.module.css';
 
 function Login({ onLoginSuccess }) {
@@ -8,6 +9,8 @@ function Login({ onLoginSuccess }) {
   const [errorLogin, setErrorLogin] = useState('');
   const [cargando, setCargando] = useState(false);
 
+  const { showToast, NotificationComponent } = useNotification();
+
   const manejarEnvio = async (e) => {
     // Evitamos que la página se recargue por completo
     e.preventDefault();
@@ -15,7 +18,8 @@ function Login({ onLoginSuccess }) {
     setCargando(true);
 
     // 🔍 PRUEBA DE DIAGNÓSTICO EN FRONTEND
-    alert(`Intentando conectar para el usuario: ${usuario}`);
+    // Reemplaza el viejo alert por esto:
+    showToast("Autenticando", `Intentando conectar para el usuario: ${usuario}`, "info", 3000);
 
     try {
       const response = await fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/login", {
@@ -109,6 +113,7 @@ function Login({ onLoginSuccess }) {
 
         </form>
       </div>
+      <NotificationComponent />
     </div>
   );
 }
