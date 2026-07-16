@@ -30,8 +30,8 @@ function Condiciones() {
   useEffect(() => {
     setCargando(true);
     Promise.all([
-      fetch("https://subsequent-military-mens-vitamin.trycloudflare.com/api/condiciones").then(res => res.json()),
-      fetch("https://subsequent-military-mens-vitamin.trycloudflare.com/api/cambios-precios").then(res => res.json()).catch(() => [])
+      fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/condiciones").then(res => res.json()),
+      fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/cambios-precios").then(res => res.json()).catch(() => [])
     ])
     .then(([dataCondiciones, dataPrecios]) => {
       setDatosCondiciones(dataCondiciones);

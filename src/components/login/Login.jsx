@@ -18,7 +18,7 @@ function Login({ onLoginSuccess }) {
     alert(`Intentando conectar para el usuario: ${usuario}`);
 
     try {
-      const response = await fetch("https://subsequent-military-mens-vitamin.trycloudflare.com/api/login", {
+      const response = await fetch("https://criteria-maximize-stores-slightly.trycloudflare.com/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
