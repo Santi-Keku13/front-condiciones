@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import styles from '../condiciones/Condiciones.module.css';
+import * as XLSX from 'xlsx';
 
 function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
   const [busquedaPrecios, setBusquedaPrecios] = useState('');
@@ -21,7 +22,6 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
   }, [busquedaPrecios, fechaFiltroPrecio, filtroLista, filtroDepto, filtroFamilia, filtroSubFamilia]);
 
   // --- RENDIMIENTO: EXTRACCIÓN DE OPCIONES ÚNICAS PARA LOS DROPDOWNS ---
-  // Esto analiza los datos que vienen del backend y arma las opciones dinámicamente
   const opcionesFiltros = useMemo(() => {
     const listas = new Set();
     const deptos = new Set();
@@ -43,7 +43,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
     };
   }, [datosPrecios]);
 
-  // --- LÓGICA DE FILTRADO EN MEMORIA RAM (INCLUYE NUEVOS FILTROS) ---
+  // --- LÓGICA DE FILTRADO EN MEMORIA RAM (INCLUYE TODOS LOS REGISTROS FILTRADOS Y PAGINADOS) ---
   const datosFiltradosYPagina = useMemo(() => {
     let res = [...datosPrecios];
     const termino = busquedaPrecios.toLowerCase().trim();
@@ -80,7 +80,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
     const total = res.length;
     const paginados = res.slice((paginaActual - 1) * filasPorPagina, paginaActual * filasPorPagina);
     
-    return { total, paginados };
+    return { total, paginados, todosFiltrados: res };
   }, [datosPrecios, busquedaPrecios, fechaFiltroPrecio, filtroLista, filtroDepto, filtroFamilia, filtroSubFamilia, paginaActual]);
 
   const totalPaginas = Math.ceil(datosFiltradosYPagina.total / filasPorPagina);
@@ -88,6 +88,34 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
   const formatearFecha = (strFecha) => {
     if (!strFecha) return '—';
     return new Date(strFecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  // 📊 FUNCIÓN DE EXPORTACIÓN A EXCEL
+  const exportarAExcel = () => {
+    if (datosFiltradosYPagina.todosFiltrados.length === 0) return;
+
+    // Preparamos los datos ordenados y legibles para las columnas de Excel
+    const datosAExportar = datosFiltradosYPagina.todosFiltrados.map(item => ({
+      'Código Art.': item.IDArticulo || '—',
+      'Scanner / PLU': item.Scanner || '—',
+      'Descripción': item.Descripcion || '—',
+      'Familia': item.Familia || '—',
+      'SubFamilia': item.SubFamilia || '—',
+      'Departamento': item.Departamento || '—',
+      'Lista ID': item.Lista || '—',
+      'Precio Venta Total ($)': item.PrecioVentaTotal || 0,
+      'Hora Cambio': item.FechaPrecio ? new Date(item.FechaPrecio).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—',
+      'Fecha Aplicación': item.FechaPrecio ? item.FechaPrecio.substring(0, 10) : '—'
+    }));
+
+    // Creamos la hoja de cálculo y el libro de trabajo
+    const worksheet = XLSX.utils.json_to_sheet(datosAExportar);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cambios de Precios");
+
+    // Nombre dinámico con la fecha seleccionada o la actual
+    const fechaNombre = fechaFiltroPrecio || new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `Cambios_de_Precios_BlowMax_${fechaNombre}.xlsx`);
   };
 
   if (cargando) return <div className={styles.centerMessage}>Cargando datos multidimensionales Blow Max...</div>;
@@ -124,7 +152,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
           <label className={styles.filterLabel}>📋 Filtrar Lista:</label>
           <select className={styles.selectDropdown} value={filtroLista} onChange={(e) => setFiltroLista(e.target.value)}>
             <option value="TODOS">Todas las Listas</option>
-            {opcionesFiltros.listas.map((l, idx) => <option key={idx} value={l}>{l.includes('Lista') ? l : `Lista ${l}`}</option>)}
+            {opcionesFiltros.listas.map((l, idx) => <option key={idx} value={l}>{l.toString().includes('Lista') ? l : `Lista ${l}`}</option>)}
           </select>
         </div>
 
@@ -150,6 +178,33 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
             <option value="TODOS">Todas</option>
             {opcionesFiltros.subFamilias.map((sf, idx) => <option key={idx} value={sf}>{sf}</option>)}
           </select>
+        </div>
+
+        {/* 📊 BOTÓN EXPORTAR A EXCEL */}
+        <div className={styles.filterGroup} style={{ justifyContent: 'flex-end' }}>
+          <label className={styles.filterLabel}>&nbsp;</label>
+          <button 
+            onClick={exportarAExcel}
+            disabled={datosFiltradosYPagina.total === 0}
+            style={{
+              backgroundColor: datosFiltradosYPagina.total === 0 ? '#94a3b8' : '#16a34a',
+              color: 'white',
+              border: 'none',
+              padding: '8px 14px',
+              borderRadius: '6px',
+              fontWeight: 'bold',
+              fontSize: '0.85rem',
+              cursor: datosFiltradosYPagina.total === 0 ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              height: '38px',
+              transition: 'background-color 0.2s'
+            }}
+          >
+             Exportar Excel ({datosFiltradosYPagina.total})
+          </button>
         </div>
 
       </div>
