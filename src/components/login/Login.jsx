@@ -22,7 +22,7 @@ function Login({ onLoginSuccess }) {
     showToast("Autenticando", `Intentando conectar para el usuario: ${usuario}`, "info", 3000);
 
     try {
-      const response = await fetch("https://additionally-exceed-gregory-may.trycloudflare.com/api/login", {
+      const response = await fetch("https://slim-fibre-creativity-height.trycloudflare.com/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
