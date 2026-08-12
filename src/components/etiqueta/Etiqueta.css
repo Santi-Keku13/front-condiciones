@@ -1,0 +1,219 @@
+/* Oculta las etiquetas en la pantalla del navegador */
+.seccion-impresion-etiquetas {
+  display: none;
+}
+
+/* ====================================================
+   ESTILOS DE ETIQUETA - MEDIDAS DE GÓNDOLA (9.5 cm x 3 cm)
+   ==================================================== */
+
+.etiqueta-container {
+  width: 95mm;
+  height: 30mm;
+  max-width: 95mm;
+  max-height: 30mm;
+  border: 1px solid #000000;
+  border-radius: 2px;
+  padding: 1mm 2mm;
+  box-sizing: border-box !important;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #000000;
+  overflow: hidden;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* --- FORMATO NORMAL --- */
+.formato-normal .header {
+  font-size: 8pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-bottom: 1px solid #000000;
+  padding-bottom: 1px;
+  line-height: 1;
+  height: 3.5mm;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.formato-normal .sub-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 5pt;
+  font-weight: bold;
+  margin: 0.5mm 0;
+  color: #222222;
+}
+
+.formato-normal .body-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+  border-top: 1px dashed #aaaaaa;
+  padding-top: 0.5mm;
+}
+
+.formato-normal .col-izq {
+  width: 45%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  font-size: 5pt;
+  border-right: 1px solid #dddddd;
+  padding-right: 1mm;
+  gap: 1px;
+}
+
+.formato-normal .col-der {
+  width: 53%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+}
+
+.formato-normal .titulo-seccion {
+  font-size: 4.5pt;
+  font-weight: bold;
+  color: #333333;
+}
+
+.formato-normal .precio-container {
+  display: flex;
+  align-items: baseline;
+  line-height: 0.9;
+}
+
+.formato-normal .simbolo-peso {
+  font-size: 9pt;
+  font-weight: bold;
+  margin-right: 1px;
+}
+
+.formato-normal .precio-grande {
+  font-size: 15pt;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.formato-normal .pie-texto {
+  font-size: 4.5pt;
+  font-weight: bold;
+}
+
+.formato-normal .pie-derecho {
+  font-size: 5pt;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* --- FORMATO PACK --- */
+.formato-pack {
+  border: 1.5px solid #000000;
+}
+
+.formato-pack .top-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 5.5pt;
+  font-weight: bold;
+  border-bottom: 1px solid #000000;
+  padding-bottom: 1px;
+}
+
+.formato-pack .sin-borde {
+  border-bottom: none !important;
+  margin-top: 1px;
+}
+
+.formato-pack .bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1mm;
+  flex: 1;
+}
+
+.formato-pack .box-pack {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 1px 4px;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.formato-pack .texto-pack {
+  font-size: 9pt;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.formato-pack .referencia {
+  font-size: 4pt;
+  text-transform: uppercase;
+}
+
+.formato-pack .box-precio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.formato-pack .precio-titulo {
+  font-size: 4.5pt;
+  font-weight: bold;
+}
+
+.formato-pack .simbolo {
+  font-size: 9pt;
+  font-weight: bold;
+}
+
+.formato-pack .precio-grande {
+  font-size: 15pt;
+  font-weight: 900;
+}
+
+
+/* ====================================================
+   REGLAS EXCLUSIVAS DE IMPRESIÓN DE LA PÁGINA
+   ==================================================== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .seccion-impresion-etiquetas,
+  .seccion-impresion-etiquetas * {
+    visibility: visible;
+  }
+
+  .seccion-impresion-etiquetas {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 2mm 3mm !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 5mm;
+  }
+}

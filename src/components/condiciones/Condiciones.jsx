@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styles from './Condiciones.module.css';
 import CambiosPrecios from '../cambiosPrecios/CambiosPrecios'; 
 import { useNotification } from '../../utilidades/useNotification';
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');
-  const { showToast, NotificationComponent } = useNotification(); // <-- INICIALIZA EL HOOK
+  const { showToast, NotificationComponent } = useNotification();
 
   // Estados Datos
   const [datosCondiciones, setDatosCondiciones] = useState([]);
@@ -17,7 +17,12 @@ function Condiciones() {
   const [busquedaInput, setBusquedaInput] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
   const [sucursal, setSucursal] = useState('ALAMEDA');
-  const [filtroLista, setFiltroLista] = useState('TODAS');
+  
+  // 🌟 CAMBIO 1: El filtro de listas ahora soporta múltiples selecciones (Array)
+  const [listasSeleccionadas, setListasSeleccionadas] = useState([]);
+  const [menuListasAbierto, setMenuListasAbierto] = useState(false);
+  const dropdownListasRef = useRef(null);
+
   const [tipoFiltroFecha, setTipoFiltroFecha] = useState('FechaModif');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
@@ -29,15 +34,17 @@ function Condiciones() {
   // Estado Modal compartido
   const [modalData, setModalData] = useState(null);
 
+  const opcionesListas = ['Lista 5', 'Lista 7', 'Lista 12', 'Lista 14', 'Lista 15'];
+
   // Carga inicial paralela
   useEffect(() => {
     setCargando(true);
     Promise.all([
-      fetch("https://city-thinks-moisture-trying.trycloudflare.com/api/condiciones").then(res => {
+      fetch("https://relay-poems-medline-dog.trycloudflare.com/api/condiciones").then(res => {
         if (!res.ok) throw new Error("Error cargando condiciones");
         return res.json();
       }),
-      fetch("https://city-thinks-moisture-trying.trycloudflare.com/api/cambios-precios").then(res => {
+      fetch("https://relay-poems-medline-dog.trycloudflare.com/api/cambios-precios").then(res => {
         if (!res.ok) throw new Error("Error cargando cambios de precios");
         return res.json();
       }).catch(() => [])
@@ -46,20 +53,29 @@ function Condiciones() {
       setDatosCondiciones(dataCondiciones);
       setDatosPrecios(dataPrecios);
       setCargando(false);
-      // 🌟 CARTEL PROFESIONAL DE ÉXITO AL CARGAR
       showToast("Sincronización Exitosa", "Los datos comerciales de Blow Max se han actualizado correctamente.", "success");
     })
     .catch((err) => {
       setError(err.message);
       setCargando(false);
-      // 🌟 CARTEL PROFESIONAL DE ERROR
       showToast("Error de Conexión", `No se pudieron obtener los datos de la sucursal: ${err.message}`, "error", 6000);
     });
   }, [showToast]);
 
+  // Cierra el menú desplegable si se hace clic fuera de él
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownListasRef.current && !dropdownListasRef.current.contains(event.target)) {
+        setMenuListasAbierto(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     setPaginaActual(1);
-  }, [busquedaInput, filtroEstado, filtroLista, fechaDesde, fechaHasta, tipoFiltroFecha, sucursal, pestanaActiva]);
+  }, [busquedaInput, filtroEstado, listasSeleccionadas, fechaDesde, fechaHasta, tipoFiltroFecha, sucursal, pestanaActiva]);
 
   // Lógica Semáforo Pestaña 1
   const obtenerEstadoVigencia = (fechaLimite) => {
@@ -100,6 +116,17 @@ function Condiciones() {
     };
   };
 
+  // Manejador del toggle de checkboxes en las listas
+  const toggleSeleccionLista = (lista) => {
+    setListasSeleccionadas(prev => 
+      prev.includes(lista) 
+        ? prev.filter(item => item !== lista) 
+        : [...prev, lista]
+    );
+  };
+
+  const seleccionarTodasLasListas = () => setListasSeleccionadas([]);
+
   const condicionesFiltradas = useMemo(() => {
     let res = [...datosCondiciones];
     const termino = busquedaInput.toLowerCase().trim();
@@ -116,12 +143,15 @@ function Condiciones() {
     if (filtroEstado !== 'TODOS') {
       res = res.filter(i => obtenerEstadoVigencia(i.VigenciaHasta).id === filtroEstado);
     }
-    if (filtroLista !== 'TODAS') {
+
+    // 🌟 CAMBIO 2: Filtrar si la lista utilizada está dentro de la selección múltiple
+    if (listasSeleccionadas.length > 0) {
       res = res.filter(i => {
         const calc = calcularPrecioSucursal(i, sucursal);
-        return calc.lista === filtroLista;
+        return listasSeleccionadas.includes(calc.lista);
       });
     }
+
     if (fechaDesde) res = res.filter(i => i[tipoFiltroFecha] && i[tipoFiltroFecha].substring(0, 10) >= fechaDesde);
     if (fechaHasta) res = res.filter(i => i[tipoFiltroFecha] && i[tipoFiltroFecha].substring(0, 10) <= fechaHasta);
     
@@ -131,7 +161,7 @@ function Condiciones() {
       total: res.length,
       paginados: res.slice((paginaActual - 1) * filasPorPagina, paginaActual * filasPorPagina)
     };
-  }, [datosCondiciones, busquedaInput, filtroEstado, filtroLista, fechaDesde, fechaHasta, tipoFiltroFecha, paginaActual, sucursal]);
+  }, [datosCondiciones, busquedaInput, filtroEstado, listasSeleccionadas, fechaDesde, fechaHasta, tipoFiltroFecha, paginaActual, sucursal]);
 
   const totalPaginasP1 = Math.ceil(condicionesFiltradas.total / filasPorPagina);
 
@@ -170,17 +200,81 @@ function Condiciones() {
                 <option value="BASTILLA"> Bastilla (L7 ➔ L12 ➔ L5)</option>
               </select>
             </div>
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>📋 Lista de Precios:</label>
-              <select className={styles.selectDropdown} value={filtroLista} onChange={(e) => setFiltroLista(e.target.value)}>
-                <option value="TODAS">Todas las Listas</option>
-                <option value="Lista 5">Lista 5</option>
-                <option value="Lista 7">Lista 7</option>
-                <option value="Lista 12">Lista 12</option>
-                <option value="Lista 14">Lista 14</option>
-                <option value="Lista 15">Lista 15</option>
-              </select>
+
+            {/* 🌟 CAMBIO 3: Componente Dropdown Multiselect para Listas */}
+            <div className={styles.filterGroup} ref={dropdownListasRef} style={{ position: 'relative' }}>
+              <label className={styles.filterLabel}>📋 Listas de Precios:</label>
+              <button 
+                type="button"
+                className={styles.selectDropdown}
+                style={{ textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                onClick={() => setMenuListasAbierto(prev => !prev)}
+              >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {listasSeleccionadas.length === 0 
+                    ? 'Todas las Listas' 
+                    : listasSeleccionadas.length === 1 
+                      ? listasSeleccionadas[0] 
+                      : `${listasSeleccionadas.length} listas sel.`}
+                </span>
+                <span style={{ fontSize: '0.7rem', marginLeft: '5px' }}>{menuListasAbierto ? '▲' : '▼'}</span>
+              </button>
+
+              {/* Menú Desplegable flotante */}
+              {menuListasAbierto && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  zIndex: 50,
+                  padding: '8px',
+                  marginTop: '4px'
+                }}>
+                  <div 
+                    onClick={seleccionarTodasLasListas} 
+                    style={{ 
+                      padding: '4px 6px', 
+                      cursor: 'pointer', 
+                      fontWeight: listasSeleccionadas.length === 0 ? 'bold' : 'normal',
+                      backgroundColor: listasSeleccionadas.length === 0 ? '#f1f5f9' : 'transparent',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <input type="checkbox" checked={listasSeleccionadas.length === 0} readOnly style={{ marginRight: '8px' }} />
+                    Todas las Listas
+                  </div>
+                  <hr style={{ margin: '6px 0', borderColor: '#e2e8f0' }} />
+                  {opcionesListas.map(lista => (
+                    <div 
+                      key={lista} 
+                      onClick={() => toggleSeleccionLista(lista)}
+                      style={{ 
+                        padding: '4px 6px', 
+                        cursor: 'pointer', 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        fontSize: '0.85rem'
+                      }}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={listasSeleccionadas.includes(lista)} 
+                        readOnly 
+                        style={{ marginRight: '8px' }} 
+                      />
+                      {lista}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>🔍 Buscar Artículo:</label>
               <input type="text" placeholder="ID Condición, ID Artículo..." className={styles.searchInput} value={busquedaInput} onChange={(e) => setBusquedaInput(e.target.value)} />
@@ -270,6 +364,7 @@ function Condiciones() {
       {pestanaActiva === 'CAMBIOS_DIA' && (
         <CambiosPrecios 
           datosPrecios={datosPrecios} 
+          datosCondiciones={datosCondiciones} 
           cargando={cargando} 
           error={error} 
           onOpenModal={setModalData} 

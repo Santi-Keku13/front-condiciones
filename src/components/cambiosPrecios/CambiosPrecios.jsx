@@ -1,14 +1,19 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import styles from '../condiciones/Condiciones.module.css';
 import * as XLSX from 'xlsx';
+import Etiqueta from '../etiqueta/Etiqueta';
 
-function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
+function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, onOpenModal }) {
   const [busquedaPrecios, setBusquedaPrecios] = useState('');
-  // Fecha por defecto: Hoy (YYYY-MM-DD)
   const [fechaFiltroPrecio, setFechaFiltroPrecio] = useState(new Date().toISOString().substring(0, 10));
   
-  // --- NUEVOS ESTADOS PARA FILTROS PARTICULARES ---
-  const [filtroLista, setFiltroLista] = useState('TODOS');
+  // --- ESTADO PARA MULTISELECCIÓN DE LISTAS ---
+  // Guardaremos un Array con los números/nombres de lista seleccionados
+  const [listasSeleccionadas, setListasSeleccionadas] = useState([]);
+  const [mostrarDropdownListas, setMostrarDropdownListas] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // --- ESTADOS PARA OTROS FILTROS ---
   const [filtroDepto, setFiltroDepto] = useState('TODOS');
   const [filtroFamilia, setFiltroFamilia] = useState('TODOS');
   const [filtroSubFamilia, setFiltroSubFamilia] = useState('TODOS');
@@ -16,12 +21,36 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
   const [paginaActual, setPaginaActual] = useState(1);
   const filasPorPagina = 50;
 
-  // Resetear a la página 1 si cambia cualquier filtro
   useEffect(() => {
     setPaginaActual(1);
-  }, [busquedaPrecios, fechaFiltroPrecio, filtroLista, filtroDepto, filtroFamilia, filtroSubFamilia]);
+  }, [busquedaPrecios, fechaFiltroPrecio, listasSeleccionadas, filtroDepto, filtroFamilia, filtroSubFamilia]);
 
-  // --- RENDIMIENTO: EXTRACCIÓN DE OPCIONES ÚNICAS PARA LOS DROPDOWNS ---
+  // Cierra el menú desplegable si se hace clic fuera de él
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setMostrarDropdownListas(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 🔍 MAPA DE BÚSQUEDA RÁPIDA DE CONDICIONES
+  const mapaCondiciones = useMemo(() => {
+    const map = new Map();
+    if (!Array.isArray(datosCondiciones)) return map;
+
+    datosCondiciones.forEach(cond => {
+      if (cond.IDArticuloReal !== undefined && cond.IDArticuloReal !== null) {
+        map.set(String(cond.IDArticuloReal).trim(), cond);
+      }
+    });
+
+    return map;
+  }, [datosCondiciones]);
+
+  // --- EXTRACCIÓN DE OPCIONES PARA DROPDOWNS ---
   const opcionesFiltros = useMemo(() => {
     const listas = new Set();
     const deptos = new Set();
@@ -36,39 +65,50 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
     });
 
     return {
-      listas: Array.from(listas).sort(),
+      listas: Array.from(listas).sort((a, b) => a - b),
       deptos: Array.from(deptos).sort(),
       familias: Array.from(familias).sort(),
       subFamilias: Array.from(subFamilias).sort()
     };
   }, [datosPrecios]);
 
-  // --- LÓGICA DE FILTRADO EN MEMORIA RAM (INCLUYE TODOS LOS REGISTROS FILTRADOS Y PAGINADOS) ---
+  // HANDLER PARA MANEJAR MARCAR / DESMARCAR LISTAS
+  const handleToggleLista = (listaValue) => {
+    const strValue = listaValue.toString();
+    setListasSeleccionadas(prev => 
+      prev.includes(strValue) 
+        ? prev.filter(l => l !== strValue) 
+        : [...prev, strValue]
+    );
+  };
+
+  const handleSeleccionarTodasListas = () => {
+    setListasSeleccionadas([]);
+  };
+
+  // --- FILTRADO DE TABLA ---
   const datosFiltradosYPagina = useMemo(() => {
     let res = [...datosPrecios];
     const termino = busquedaPrecios.toLowerCase().trim();
 
-    // 1. Filtro estricto por fecha seleccionada
     if (fechaFiltroPrecio) {
       res = res.filter(i => i.FechaPrecio && i.FechaPrecio.substring(0, 10) === fechaFiltroPrecio);
     }
-    // 2. Filtro por Lista
-    if (filtroLista !== 'TODOS') {
-      res = res.filter(i => i.Lista?.toString() === filtroLista.toString());
+    
+    // 🌟 NUEVA LÓGICA MULTI-LISTA: Si hay listas seleccionadas, filtra por cualquiera de ellas
+    if (listasSeleccionadas.length > 0) {
+      res = res.filter(i => i.Lista && listasSeleccionadas.includes(i.Lista.toString()));
     }
-    // 3. Filtro por Departamento
+
     if (filtroDepto !== 'TODOS') {
       res = res.filter(i => i.Departamento === filtroDepto);
     }
-    // 4. Filtro por Familia
     if (filtroFamilia !== 'TODOS') {
       res = res.filter(i => i.Familia === filtroFamilia);
     }
-    // 5. Filtro por SubFamilia
     if (filtroSubFamilia !== 'TODOS') {
       res = res.filter(i => i.SubFamilia === filtroSubFamilia);
     }
-    // 6. Filtro por término por texto (ID, descripción o scanner)
     if (termino) {
       res = res.filter(i => 
         i.IDArticulo?.toString().includes(termino) || 
@@ -81,7 +121,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
     const paginados = res.slice((paginaActual - 1) * filasPorPagina, paginaActual * filasPorPagina);
     
     return { total, paginados, todosFiltrados: res };
-  }, [datosPrecios, busquedaPrecios, fechaFiltroPrecio, filtroLista, filtroDepto, filtroFamilia, filtroSubFamilia, paginaActual]);
+  }, [datosPrecios, busquedaPrecios, fechaFiltroPrecio, listasSeleccionadas, filtroDepto, filtroFamilia, filtroSubFamilia, paginaActual]);
 
   const totalPaginas = Math.ceil(datosFiltradosYPagina.total / filasPorPagina);
 
@@ -90,11 +130,9 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
     return new Date(strFecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // 📊 FUNCIÓN DE EXPORTACIÓN A EXCEL
   const exportarAExcel = () => {
     if (datosFiltradosYPagina.todosFiltrados.length === 0) return;
 
-    // Preparamos los datos ordenados y legibles para las columnas de Excel
     const datosAExportar = datosFiltradosYPagina.todosFiltrados.map(item => ({
       'Código Art.': item.IDArticulo || '—',
       'Scanner / PLU': item.Scanner || '—',
@@ -108,14 +146,16 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
       'Fecha Aplicación': item.FechaPrecio ? item.FechaPrecio.substring(0, 10) : '—'
     }));
 
-    // Creamos la hoja de cálculo y el libro de trabajo
     const worksheet = XLSX.utils.json_to_sheet(datosAExportar);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Cambios de Precios");
 
-    // Nombre dinámico con la fecha seleccionada o la actual
     const fechaNombre = fechaFiltroPrecio || new Date().toISOString().slice(0, 10);
     XLSX.writeFile(workbook, `Cambios_de_Precios_BlowMax_${fechaNombre}.xlsx`);
+  };
+
+  const exportarAPDF = () => {
+    window.print();
   };
 
   if (cargando) return <div className={styles.centerMessage}>Cargando datos multidimensionales Blow Max...</div>;
@@ -123,7 +163,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
 
   return (
     <>
-      {/* --- PANEL DE FILTROS EXPANDIDO (GRID ADAPTATIVO BLOW MAX) --- */}
+      {/* --- PANEL DE FILTROS --- */}
       <div className={styles.filterPanel} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
         
         <div className={styles.filterGroup} style={{ gridColumn: 'span 2' }}>
@@ -148,12 +188,72 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
           />
         </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>📋 Filtrar Lista:</label>
-          <select className={styles.selectDropdown} value={filtroLista} onChange={(e) => setFiltroLista(e.target.value)}>
-            <option value="TODOS">Todas las Listas</option>
-            {opcionesFiltros.listas.map((l, idx) => <option key={idx} value={l}>{l.toString().includes('Lista') ? l : `Lista ${l}`}</option>)}
-          </select>
+        {/* 🌟 DESPLEGABLE CON SELECCIÓN MÚLTIPLE DE LISTAS 🌟 */}
+        <div className={styles.filterGroup} ref={dropdownRef} style={{ position: 'relative' }}>
+          <label className={styles.filterLabel}>📋 Filtrar Listas:</label>
+          <button 
+            type="button"
+            onClick={() => setMostrarDropdownListas(!mostrarDropdownListas)}
+            className={styles.selectDropdown}
+            style={{ 
+              textAlign: 'left', 
+              background: '#fff', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center' 
+            }}
+          >
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {listasSeleccionadas.length === 0 
+                ? 'Todas las Listas' 
+                : listasSeleccionadas.length === 1 
+                  ? `Lista ${listasSeleccionadas[0]}` 
+                  : `${listasSeleccionadas.length} listas selec.`}
+            </span>
+            <small>▼</small>
+          </button>
+
+          {mostrarDropdownListas && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              backgroundColor: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+              padding: '8px',
+              maxHeight: '220px',
+              overflowY: 'auto'
+            }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 'bold' }}>
+                <input 
+                  type="checkbox" 
+                  checked={listasSeleccionadas.length === 0} 
+                  onChange={handleSeleccionarTodasListas}
+                />
+                Todas las Listas
+              </label>
+
+              {opcionesFiltros.listas.map((l, idx) => {
+                const strL = l.toString();
+                const isChecked = listasSeleccionadas.includes(strL);
+                return (
+                  <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={isChecked} 
+                      onChange={() => handleToggleLista(l)}
+                    />
+                    {strL.includes('Lista') ? strL : `Lista ${strL}`}
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className={styles.filterGroup}>
@@ -180,9 +280,32 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
           </select>
         </div>
 
-        {/* 📊 BOTÓN EXPORTAR A EXCEL */}
-        <div className={styles.filterGroup} style={{ justifyContent: 'flex-end' }}>
-          <label className={styles.filterLabel}>&nbsp;</label>
+        {/* BOTONES */}
+        <div className={styles.filterGroup} style={{ justifyContent: 'flex-end', flexDirection: 'row', gap: '8px' }}>
+          <button 
+            onClick={exportarAPDF}
+            disabled={datosFiltradosYPagina.total === 0}
+            style={{
+              backgroundColor: datosFiltradosYPagina.total === 0 ? '#94a3b8' : '#2563eb',
+              color: 'white',
+              border: 'none',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              fontWeight: 'bold',
+              fontSize: '0.85rem',
+              cursor: datosFiltradosYPagina.total === 0 ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              height: '38px',
+              transition: 'background-color 0.2s'
+            }}
+            title="Imprimir Etiquetas dinámicas de Góndola"
+          >
+              🖨️ Imprimir Etiquetas
+          </button>
+
           <button 
             onClick={exportarAExcel}
             disabled={datosFiltradosYPagina.total === 0}
@@ -190,7 +313,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
               backgroundColor: datosFiltradosYPagina.total === 0 ? '#94a3b8' : '#16a34a',
               color: 'white',
               border: 'none',
-              padding: '8px 14px',
+              padding: '8px 12px',
               borderRadius: '6px',
               fontWeight: 'bold',
               fontSize: '0.85rem',
@@ -203,7 +326,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
               transition: 'background-color 0.2s'
             }}
           >
-             Exportar Excel ({datosFiltradosYPagina.total})
+              Excel ({datosFiltradosYPagina.total})
           </button>
         </div>
 
@@ -237,7 +360,7 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
                 <td className={styles.td}>{item.Departamento || '—'}</td>
                 <td className={styles.td} style={{ textAlign: 'center', fontWeight: 'bold', color: '#475569' }}>{item.Lista}</td>
                 <td className={styles.td} style={{ textAlign: 'right', color: '#16a34a', fontWeight: '700', fontSize: '1rem' }}>
-                  ${item.PrecioVentaTotal?.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                  ${Number(item.PrecioVentaTotal || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </td>
                 <td className={styles.td} style={{ fontSize: '0.85rem', color: '#C41E3A', fontWeight: '500' }}>
                   {new Date(item.FechaPrecio).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs
@@ -266,6 +389,44 @@ function CambiosPrecios({ datosPrecios, cargando, error, onOpenModal }) {
           <button disabled={paginaActual === totalPaginas} onClick={() => setPaginaActual(p => p + 1)} className={styles.pageButton}>Siguiente ▶</button>
         </div>
       )}
+
+      {/* ===== CONTENEDOR OCULTO DE ETIQUETAS PARA IMPRESIÓN ===== */}
+      <div className="seccion-impresion-etiquetas">
+        {datosFiltradosYPagina.todosFiltrados.map((item, index) => {
+          const precioVenta = Number(item.PrecioVentaTotal) || 0;
+          const valorSinIvaBruto = item.PrecioTotalSIVA ?? 0;
+          const precioSinIvaValor = Number(valorSinIvaBruto) || 0;
+
+          const esUnidad = Number(item.IDPresentacion) === 1;
+          const tipoEtiquetaCalculado = esUnidad ? 'NORMAL' : 'PACK';
+
+          const idBuscar = String(item.IDArticulo).trim();
+          const condicionAsociada = mapaCondiciones.get(idBuscar);
+
+          const tieneCondicion = !!condicionAsociada;
+
+          const datosMapeados = {
+            descripcion: item.Descripcion || 'SIN DESCRIPCIÓN',
+            fecha: item.FechaPrecio ? formatearFecha(item.FechaPrecio) : new Date().toLocaleDateString('es-AR'),
+            codigoInterno: item.IDArticulo || '—',
+            codigoBarras: item.Scanner || item.IDArticulo || '—',
+            scanner: item.Scanner || '—',
+            precioUnitario: precioVenta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            precioSinImpuesto: precioSinIvaValor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            
+            precioCantidad: tieneCondicion ? precioVenta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+            compraMinima: tieneCondicion ? (condicionAsociada.Desde || '') : ''
+          };
+
+          return (
+            <Etiqueta 
+              key={index} 
+              tipo={tipoEtiquetaCalculado} 
+              datos={datosMapeados} 
+            />
+          );
+        })}
+      </div>
     </>
   );
 }
