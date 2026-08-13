@@ -8,7 +8,6 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
   const [fechaFiltroPrecio, setFechaFiltroPrecio] = useState(new Date().toISOString().substring(0, 10));
   
   // --- ESTADO PARA MULTISELECCIÓN DE LISTAS ---
-  // Guardaremos un Array con los números/nombres de lista seleccionados
   const [listasSeleccionadas, setListasSeleccionadas] = useState([]);
   const [mostrarDropdownListas, setMostrarDropdownListas] = useState(false);
   const dropdownRef = useRef(null);
@@ -95,7 +94,6 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
       res = res.filter(i => i.FechaPrecio && i.FechaPrecio.substring(0, 10) === fechaFiltroPrecio);
     }
     
-    // 🌟 NUEVA LÓGICA MULTI-LISTA: Si hay listas seleccionadas, filtra por cualquiera de ellas
     if (listasSeleccionadas.length > 0) {
       res = res.filter(i => i.Lista && listasSeleccionadas.includes(i.Lista.toString()));
     }
@@ -393,17 +391,31 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
       {/* ===== CONTENEDOR OCULTO DE ETIQUETAS PARA IMPRESIÓN ===== */}
       <div className="seccion-impresion-etiquetas">
         {datosFiltradosYPagina.todosFiltrados.map((item, index) => {
-          const precioVenta = Number(item.PrecioVentaTotal) || 0;
-          const valorSinIvaBruto = item.PrecioTotalSIVA ?? 0;
-          const precioSinIvaValor = Number(valorSinIvaBruto) || 0;
-
+          // 1. En Cambios de Precios, PrecioVentaTotal ES el PRECIO LISTA BASE ($249,00)
+          const precioListaBase = Number(item.PrecioVentaTotal) || 0;
+          
           const esUnidad = Number(item.IDPresentacion) === 1;
           const tipoEtiquetaCalculado = esUnidad ? 'NORMAL' : 'PACK';
 
           const idBuscar = String(item.IDArticulo).trim();
           const condicionAsociada = mapaCondiciones.get(idBuscar);
 
-          const tieneCondicion = !!condicionAsociada;
+          // Obtener el porcentaje de descuento o el precio final de la condición
+          const porcentajeDescuento = Number(condicionAsociada?.PorDescRec) || 0;
+          const tieneCondicion = !!condicionAsociada && (porcentajeDescuento > 0 || condicionAsociada.PrecioFinal !== undefined);
+
+          // 2. Calcular Precio con Descuento ($212,00)
+          let precioConDescuento = 0;
+          if (tieneCondicion) {
+            if (condicionAsociada.PrecioFinal !== undefined && condicionAsociada.PrecioFinal !== null) {
+              precioConDescuento = Number(condicionAsociada.PrecioFinal);
+            } else {
+              precioConDescuento = precioListaBase * (1 - (porcentajeDescuento / 100));
+            }
+          }
+
+          // 3. Precio Sin IVA del Precio Lista Base
+          const precioSinIvaCalculado = precioListaBase / 1.21;
 
           const datosMapeados = {
             descripcion: item.Descripcion || 'SIN DESCRIPCIÓN',
@@ -411,10 +423,22 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
             codigoInterno: item.IDArticulo || '—',
             codigoBarras: item.Scanner || item.IDArticulo || '—',
             scanner: item.Scanner || '—',
-            precioUnitario: precioVenta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            precioSinImpuesto: precioSinIvaValor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             
-            precioCantidad: tieneCondicion ? precioVenta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+            // DERECHA: Precio Lista Base ($249,00)
+            precioUnitario: precioListaBase.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            
+            // DERECHA: Precio Sin IVA ($205,79)
+            precioSinImpuesto: precioSinIvaCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            
+            // ETIQUETA PACK
+            CantUni: item.CantUni || 1,
+
+            // IZQUIERDA: Precio con Descuento ($212,00)
+            precioCantidad: tieneCondicion 
+              ? precioConDescuento.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+              : '',
+              
+            // IZQUIERDA: Compra mínima
             compraMinima: tieneCondicion ? (condicionAsociada.Desde || '') : ''
           };
 

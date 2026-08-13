@@ -14,7 +14,7 @@
   max-height: 30mm;
   border: 1px solid #000000;
   border-radius: 2px;
-  padding: 1mm 2mm;
+  padding: 1.5mm 2.5mm;
   box-sizing: border-box !important;
   background-color: #ffffff;
   display: flex;
@@ -29,13 +29,13 @@
 
 /* --- FORMATO NORMAL --- */
 .formato-normal .header {
-  font-size: 8pt;
+  font-size: 9.5pt;
   font-weight: 800;
   text-transform: uppercase;
   border-bottom: 1px solid #000000;
   padding-bottom: 1px;
-  line-height: 1;
-  height: 3.5mm;
+  line-height: 1.1;
+  height: 4mm;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -44,7 +44,7 @@
 .formato-normal .sub-header {
   display: flex;
   justify-content: space-between;
-  font-size: 5pt;
+  font-size: 6pt;
   font-weight: bold;
   margin: 0.5mm 0;
   color: #222222;
@@ -53,67 +53,75 @@
 .formato-normal .body-content {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
   flex: 1;
   border-top: 1px dashed #aaaaaa;
   padding-top: 0.5mm;
 }
 
+/* 🌟 Distribución 50/50 para equilibrar tamaños de precio */
 .formato-normal .col-izq {
-  width: 45%;
+  width: 48%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: flex-start;
   height: 100%;
-  font-size: 5pt;
+  font-size: 5.5pt;
   border-right: 1px solid #dddddd;
-  padding-right: 1mm;
-  gap: 1px;
+  padding-right: 1.5mm;
+  box-sizing: border-box;
 }
 
 .formato-normal .col-der {
-  width: 53%;
+  width: 48%;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: space-between;
   height: 100%;
+  box-sizing: border-box;
 }
 
 .formato-normal .titulo-seccion {
-  font-size: 4.5pt;
+  font-size: 5.5pt;
   font-weight: bold;
   color: #333333;
+  line-height: 1;
 }
 
 .formato-normal .precio-container {
   display: flex;
   align-items: baseline;
   line-height: 0.9;
+  margin: 1px 0;
 }
 
+/* 🌟 Símbolos y tipografías igualadas en ambas columnas */
 .formato-normal .simbolo-peso {
-  font-size: 9pt;
+  font-size: 11pt;
   font-weight: bold;
   margin-right: 1px;
 }
 
 .formato-normal .precio-grande {
-  font-size: 15pt;
+  font-size: 17pt;
   font-weight: 900;
   letter-spacing: -0.5px;
 }
 
 .formato-normal .pie-texto {
-  font-size: 4.5pt;
+  font-size: 5.5pt;
   font-weight: bold;
 }
 
 .formato-normal .pie-derecho {
-  font-size: 5pt;
+  font-size: 5.5pt;
   text-align: right;
   display: flex;
   flex-direction: column;
+  line-height: 1.1;
+  margin-top: 1px;
 }
 
 
@@ -125,7 +133,7 @@
 .formato-pack .top-row {
   display: flex;
   justify-content: space-between;
-  font-size: 5.5pt;
+  font-size: 6.5pt;
   font-weight: bold;
   border-bottom: 1px solid #000000;
   padding-bottom: 1px;
@@ -147,7 +155,7 @@
 .formato-pack .box-pack {
   background-color: #000000;
   color: #ffffff;
-  padding: 1px 4px;
+  padding: 2px 5px;
   border-radius: 2px;
   display: flex;
   flex-direction: column;
@@ -156,13 +164,13 @@
 }
 
 .formato-pack .texto-pack {
-  font-size: 9pt;
+  font-size: 10.5pt;
   font-weight: 900;
   line-height: 1;
 }
 
 .formato-pack .referencia {
-  font-size: 4pt;
+  font-size: 5pt;
   text-transform: uppercase;
 }
 
@@ -170,21 +178,48 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .formato-pack .precio-titulo {
-  font-size: 4.5pt;
+  font-size: 5.5pt;
   font-weight: bold;
+  line-height: 1;
 }
 
 .formato-pack .simbolo {
-  font-size: 9pt;
+  font-size: 11pt;
   font-weight: bold;
 }
 
 .formato-pack .precio-grande {
-  font-size: 15pt;
+  font-size: 17pt;
   font-weight: 900;
+  line-height: 0.9;
+}
+
+/* 🟢 PRECIO SIN IVA PARA LA ETIQUETA PACK */
+.formato-pack .precio-sin-iva-pack {
+  font-size: 5.5pt;
+  font-weight: bold;
+  text-align: right;
+  line-height: 1.1;
+  margin-top: 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.formato-pack .label-sin-iva {
+  font-size: 4.5pt;
+  color: #333333;
+  font-weight: bold;
+}
+
+.formato-pack .valor-sin-iva {
+  font-size: 5.5pt;
+  font-weight: bold;
 }
 
 
