@@ -76,7 +76,7 @@ function Etiqueta({ tipo = 'NORMAL', datos = {} }) {
           {/* 🌟 AHORA USA LAS MISMAS CLASES QUE EL LADO DERECHO 🌟 */}
           <div className="precio-container">
             <span className="simbolo-peso">$</span>
-            <span className="precio-grande">{precioCantidad || '0,00'}</span>
+            <span className="precio-grande">{precioCantidad || ' '}</span>
           </div>
 
           <span className="pie-texto">
