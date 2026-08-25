@@ -40,11 +40,11 @@ function Condiciones() {
   useEffect(() => {
     setCargando(true);
     Promise.all([
-      fetch("https://relay-poems-medline-dog.trycloudflare.com/api/condiciones").then(res => {
+      fetch("https://projected-montana-dame-laptops.trycloudflare.com/api/condiciones").then(res => {
         if (!res.ok) throw new Error("Error cargando condiciones");
         return res.json();
       }),
-      fetch("https://relay-poems-medline-dog.trycloudflare.com/api/cambios-precios").then(res => {
+      fetch("https://projected-montana-dame-laptops.trycloudflare.com/api/cambios-precios").then(res => {
         if (!res.ok) throw new Error("Error cargando cambios de precios");
         return res.json();
       }).catch(() => [])
