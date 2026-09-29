@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styles from './Condiciones.module.css';
-import CambiosPrecios from '../cambiosPrecios/CambiosPrecios'; 
+import CambiosPrecios from '../cambiosPrecios/CambiosPrecios';
+import ColectarPrecios from '../colectar/ColectarPrecios'; // 🆕
 import { useNotification } from '../../utilidades/useNotification';
+
+// 🆕 URL base del back — centralizada
+const API_BASE = "https://exterior-breath-assessing-php.trycloudflare.com";
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');
@@ -17,8 +21,6 @@ function Condiciones() {
   const [busquedaInput, setBusquedaInput] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
   const [sucursal, setSucursal] = useState('ALAMEDA');
-  
-  // 🌟 CAMBIO 1: El filtro de listas ahora soporta múltiples selecciones (Array)
   const [listasSeleccionadas, setListasSeleccionadas] = useState([]);
   const [menuListasAbierto, setMenuListasAbierto] = useState(false);
   const dropdownListasRef = useRef(null);
@@ -40,11 +42,11 @@ function Condiciones() {
   useEffect(() => {
     setCargando(true);
     Promise.all([
-      fetch("https://exterior-breath-assessing-php.trycloudflare.com/api/condiciones").then(res => {
+      fetch(`${API_BASE}/api/condiciones`).then(res => {
         if (!res.ok) throw new Error("Error cargando condiciones");
         return res.json();
       }),
-      fetch("https://exterior-breath-assessing-php.trycloudflare.com/api/cambios-precios").then(res => {
+      fetch(`${API_BASE}/api/cambios-precios`).then(res => {
         if (!res.ok) throw new Error("Error cargando cambios de precios");
         return res.json();
       }).catch(() => [])
@@ -94,19 +96,19 @@ function Condiciones() {
     let precioBase = 0;
     let listaUtilizada = 'Lista 5';
     if (suc === 'ALAMEDA') {
-      if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; } 
+      if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; }
       else { precioBase = item.PrecioL5; listaUtilizada = 'Lista 5'; }
     } else if (suc === 'ACCESO') {
-      if (item.PrecioL14 > 0) { precioBase = item.PrecioL14; listaUtilizada = 'Lista 14'; } 
-      else if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; } 
+      if (item.PrecioL14 > 0) { precioBase = item.PrecioL14; listaUtilizada = 'Lista 14'; }
+      else if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; }
       else { precioBase = item.PrecioL5; listaUtilizada = 'Lista 5'; }
     } else if (suc === 'BASTILLA') {
-      if (item.PrecioL7 > 0) { precioBase = item.PrecioL7; listaUtilizada = 'Lista 7'; } 
-      else if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; } 
+      if (item.PrecioL7 > 0) { precioBase = item.PrecioL7; listaUtilizada = 'Lista 7'; }
+      else if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; }
       else { precioBase = item.PrecioL5; listaUtilizada = 'Lista 5'; }
     } else if (suc === 'ALBERDI') {
-      if (item.PrecioL15 > 0) { precioBase = item.PrecioL15; listaUtilizada = 'Lista 15'; } 
-      else if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; } 
+      if (item.PrecioL15 > 0) { precioBase = item.PrecioL15; listaUtilizada = 'Lista 15'; }
+      else if (item.PrecioL12 > 0) { precioBase = item.PrecioL12; listaUtilizada = 'Lista 12'; }
       else { precioBase = item.PrecioL5; listaUtilizada = 'Lista 5'; }
     }
     return {
@@ -116,11 +118,10 @@ function Condiciones() {
     };
   };
 
-  // Manejador del toggle de checkboxes en las listas
   const toggleSeleccionLista = (lista) => {
-    setListasSeleccionadas(prev => 
-      prev.includes(lista) 
-        ? prev.filter(item => item !== lista) 
+    setListasSeleccionadas(prev =>
+      prev.includes(lista)
+        ? prev.filter(item => item !== lista)
         : [...prev, lista]
     );
   };
@@ -132,10 +133,10 @@ function Condiciones() {
     const termino = busquedaInput.toLowerCase().trim();
 
     if (termino) {
-      res = res.filter(i => 
-        i.IDCondicionComercial?.toString().includes(termino) || 
+      res = res.filter(i =>
+        i.IDCondicionComercial?.toString().includes(termino) ||
         i.IDArticuloReal?.toString().includes(termino) ||
-        i.Descripcion?.toLowerCase().includes(termino) || 
+        i.Descripcion?.toLowerCase().includes(termino) ||
         i.DescripcionCondicion?.toLowerCase().includes(termino) ||
         i.ScannerReal?.toString().includes(termino)
       );
@@ -144,7 +145,6 @@ function Condiciones() {
       res = res.filter(i => obtenerEstadoVigencia(i.VigenciaHasta).id === filtroEstado);
     }
 
-    // 🌟 CAMBIO 2: Filtrar si la lista utilizada está dentro de la selección múltiple
     if (listasSeleccionadas.length > 0) {
       res = res.filter(i => {
         const calc = calcularPrecioSucursal(i, sucursal);
@@ -154,9 +154,9 @@ function Condiciones() {
 
     if (fechaDesde) res = res.filter(i => i[tipoFiltroFecha] && i[tipoFiltroFecha].substring(0, 10) >= fechaDesde);
     if (fechaHasta) res = res.filter(i => i[tipoFiltroFecha] && i[tipoFiltroFecha].substring(0, 10) <= fechaHasta);
-    
+
     res.sort((a, b) => new Date(b.FechaModif) - new Date(a.FechaModif));
-    
+
     return {
       total: res.length,
       paginados: res.slice((paginaActual - 1) * filasPorPagina, paginaActual * filasPorPagina)
@@ -167,20 +167,28 @@ function Condiciones() {
 
   return (
     <div className={styles.container}>
-      
+
       {/* --- SELECTOR DE PESTAÑAS --- */}
       <div className={styles.tabsContainer}>
-        <button 
+        <button
           onClick={() => setPestanaActiva('CONDICIONES')}
           className={`${styles.tabLink} ${pestanaActiva === 'CONDICIONES' ? styles.tabLinkActive : ''}`}
         >
           Panel Supervisor de Condiciones Comerciales
         </button>
-        <button 
+        <button
           onClick={() => setPestanaActiva('CAMBIOS_DIA')}
           className={`${styles.tabLink} ${pestanaActiva === 'CAMBIOS_DIA' ? styles.tabLinkActive : ''}`}
         >
           Cambios de Precios del Día
+        </button>
+
+        {/* 🆕 NUEVA PESTAÑA */}
+        <button
+          onClick={() => setPestanaActiva('COLECTOR')}
+          className={`${styles.tabLink} ${pestanaActiva === 'COLECTOR' ? styles.tabLinkActive : ''}`}
+        >
+          Colector de Precios
         </button>
       </div>
 
@@ -201,26 +209,24 @@ function Condiciones() {
               </select>
             </div>
 
-            {/* 🌟 CAMBIO 3: Componente Dropdown Multiselect para Listas */}
             <div className={styles.filterGroup} ref={dropdownListasRef} style={{ position: 'relative' }}>
               <label className={styles.filterLabel}>📋 Listas de Precios:</label>
-              <button 
+              <button
                 type="button"
                 className={styles.selectDropdown}
                 style={{ textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                 onClick={() => setMenuListasAbierto(prev => !prev)}
               >
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {listasSeleccionadas.length === 0 
-                    ? 'Todas las Listas' 
-                    : listasSeleccionadas.length === 1 
-                      ? listasSeleccionadas[0] 
+                  {listasSeleccionadas.length === 0
+                    ? 'Todas las Listas'
+                    : listasSeleccionadas.length === 1
+                      ? listasSeleccionadas[0]
                       : `${listasSeleccionadas.length} listas sel.`}
                 </span>
                 <span style={{ fontSize: '0.7rem', marginLeft: '5px' }}>{menuListasAbierto ? '▲' : '▼'}</span>
               </button>
 
-              {/* Menú Desplegable flotante */}
               {menuListasAbierto && (
                 <div style={{
                   position: 'absolute',
@@ -235,11 +241,11 @@ function Condiciones() {
                   padding: '8px',
                   marginTop: '4px'
                 }}>
-                  <div 
-                    onClick={seleccionarTodasLasListas} 
-                    style={{ 
-                      padding: '4px 6px', 
-                      cursor: 'pointer', 
+                  <div
+                    onClick={seleccionarTodasLasListas}
+                    style={{
+                      padding: '4px 6px',
+                      cursor: 'pointer',
                       fontWeight: listasSeleccionadas.length === 0 ? 'bold' : 'normal',
                       backgroundColor: listasSeleccionadas.length === 0 ? '#f1f5f9' : 'transparent',
                       borderRadius: '4px',
@@ -251,22 +257,22 @@ function Condiciones() {
                   </div>
                   <hr style={{ margin: '6px 0', borderColor: '#e2e8f0' }} />
                   {opcionesListas.map(lista => (
-                    <div 
-                      key={lista} 
+                    <div
+                      key={lista}
                       onClick={() => toggleSeleccionLista(lista)}
-                      style={{ 
-                        padding: '4px 6px', 
-                        cursor: 'pointer', 
-                        display: 'flex', 
+                      style={{
+                        padding: '4px 6px',
+                        cursor: 'pointer',
+                        display: 'flex',
                         alignItems: 'center',
                         fontSize: '0.85rem'
                       }}
                     >
-                      <input 
-                        type="checkbox" 
-                        checked={listasSeleccionadas.includes(lista)} 
-                        readOnly 
-                        style={{ marginRight: '8px' }} 
+                      <input
+                        type="checkbox"
+                        checked={listasSeleccionadas.includes(lista)}
+                        readOnly
+                        style={{ marginRight: '8px' }}
                       />
                       {lista}
                     </div>
@@ -362,13 +368,18 @@ function Condiciones() {
 
       {/* --- CONTENIDO DE PESTAÑA 2 --- */}
       {pestanaActiva === 'CAMBIOS_DIA' && (
-        <CambiosPrecios 
-          datosPrecios={datosPrecios} 
-          datosCondiciones={datosCondiciones} 
-          cargando={cargando} 
-          error={error} 
-          onOpenModal={setModalData} 
+        <CambiosPrecios
+          datosPrecios={datosPrecios}
+          datosCondiciones={datosCondiciones}
+          cargando={cargando}
+          error={error}
+          onOpenModal={setModalData}
         />
+      )}
+
+      {/* 🆕 CONTENIDO DE PESTAÑA 3: COLECTOR */}
+      {pestanaActiva === 'COLECTOR' && (
+        <ColectarPrecios apiBase={API_BASE} />
       )}
 
       {/* --- MODAL COMPARTIDO Y DINÁMICO --- */}
@@ -383,14 +394,14 @@ function Condiciones() {
               <div className={styles.modalBlockFull}>
                 <div className={styles.modalBlockLabel}>Artículo Comercial</div>
                 <div className={styles.modalBlockValue}>
-                  {modalData.data.Descripcion || modalData.data.DescripcionCondicion} 
+                  {modalData.data.Descripcion || modalData.data.DescripcionCondicion}
                   <span className={styles.badgePlu}>
-                    ID Art: {modalData.data.IDArticuloReal || modalData.data.IDArticulo || modalData.data.IDCondicionComercial || '—'} | 
+                    ID Art: {modalData.data.IDArticuloReal || modalData.data.IDArticulo || modalData.data.IDCondicionComercial || '—'} |
                     Ref Scanner: {modalData.data.ScannerReal || modalData.data.Scanner || modalData.data.PLU || '—'}
                   </span>
                 </div>
               </div>
-              
+
               {modalData.type === 'CONDICION' ? (
                 <div className={styles.modalGrid}>
                   <div className={styles.modalBlock}><div className={styles.modalBlockLabel}>Lista Base</div><div className={styles.modalBlockValue}>{modalData.calc.lista}</div></div>

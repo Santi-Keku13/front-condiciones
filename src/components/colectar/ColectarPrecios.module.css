@@ -1,0 +1,734 @@
+/* =========================================================
+   CONTENEDOR PRINCIPAL
+   ========================================================= */
+.container {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  margin: 0;
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #1e293b;
+}
+
+.title {
+  font-family: 'Quicksand', sans-serif;
+  color: #C41E3A;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #C41E3A;
+  display: inline-block;
+}
+
+/* =========================================================
+   PANEL DE ESCANEO
+   ========================================================= */
+.scanPanel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 15px;
+  align-items: flex-end;
+  background-color: #fff5f5;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #fee2e2;
+  margin-bottom: 25px;
+}
+
+.scanGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scanLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #991b1b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.scanInput {
+  padding: 14px 16px;
+  font-size: 1.05rem;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+  background-color: #ffffff;
+  color: #1e293b;
+  transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+.scanInput:focus {
+  border-color: #C41E3A;
+  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.15);
+  outline: none;
+}
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+.btnPrimary {
+  padding: 14px 24px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  background-color: #C41E3A;
+  border: 1px solid #C41E3A;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Quicksand', sans-serif;
+  white-space: nowrap;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: #a01830;
+  border-color: #a01830;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #C41E3A;
+  background-color: #ffffff;
+  border: 1px solid #C41E3A;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Quicksand', sans-serif;
+}
+
+.btnGhost:hover:not(:disabled) {
+  background-color: #C41E3A;
+  color: #ffffff;
+}
+
+.btnGhost:disabled {
+  border-color: #cbd5e1;
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   CABECERA DE LA LISTA
+   ========================================================= */
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.listTitle {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #C41E3A;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.counter {
+  display: inline-block;
+  background-color: #C41E3A;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.listActions {
+  display: flex;
+  gap: 10px;
+}
+
+/* =========================================================
+   ESTADO VACÍO
+   ========================================================= */
+.emptyState {
+  border: 2px dashed #fee2e2;
+  border-radius: 12px;
+  padding: 50px 20px;
+  text-align: center;
+  color: #94a3b8;
+  background-color: #fffafa;
+}
+
+.emptyState p {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0 0 6px;
+}
+
+.emptyState span {
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   TABLA
+   ========================================================= */
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #fee2e2;
+  background-color: #ffffff;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+
+.thead {
+  background-color: #C41E3A;
+}
+
+.th {
+  color: #ffffff;
+  padding: 15px;
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.tr {
+  border-bottom: 1px solid #fee2e2;
+  transition: background-color 0.15s;
+}
+
+.tr:hover {
+  background-color: #fff1f2;
+}
+
+.trError {
+  background-color: #fef2f2;
+}
+
+.td {
+  padding: 14px 15px;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.tdBold {
+  font-weight: 700;
+  color: #C41E3A;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+.errorText {
+  color: #C41E3A;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.precioFinal {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+.badgeCondicion {
+  display: inline-block;
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badgePack {
+  display: inline-block;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.badgeNormal {
+  display: inline-block;
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   BOTÓN ELIMINAR
+   ========================================================= */
+.btnDelete {
+  background: transparent;
+  border: none;
+  color: #C41E3A;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+}
+
+.btnDelete:hover {
+  background-color: #fee2e2;
+}
+
+/* =========================================================
+   HEADER CON BADGE DE CACHE
+   ========================================================= */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 25px;
+}
+
+.cacheBadge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background-color: #fff5f5;
+  border: 1px solid #fee2e2;
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+
+.cacheDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+  flex-shrink: 0;
+}
+
+.cacheInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cacheLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #991b1b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cacheValue {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+.cacheDivider {
+  width: 1px;
+  height: 30px;
+  background-color: #fca5a5;
+}
+
+.btnRefresh {
+  background: none;
+  border: 1px solid #C41E3A;
+  color: #C41E3A;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btnRefresh:hover:not(:disabled) {
+  background-color: #C41E3A;
+  color: #ffffff;
+}
+
+.btnRefresh:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* =========================================================
+   ESTADOS DE CARGA / ERROR
+   ========================================================= */
+.loadingState,
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.errorState p {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #C41E3A;
+  margin: 0;
+}
+
+.errorState span {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #fee2e2;
+  border-top-color: #C41E3A;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================================
+   TOASTS
+   ========================================================= */
+.toastContainer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 450px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-left: 5px solid #64748b;
+  animation: slideIn 0.3s ease-out forwards;
+  font-family: inherit;
+}
+
+.toastSuccess { border-left-color: #16a34a; }
+.toastError   { border-left-color: #C41E3A; }
+.toastWarning { border-left-color: #d97706; }
+.toastInfo    { border-left-color: #3b82f6; }
+
+.toastContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toastTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.toastMessage {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.toastClose {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.toastClose:hover {
+  color: #475569;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 640px) {
+  .title { font-size: 1.6rem; }
+  .scanPanel {
+    grid-template-columns: 1fr;
+  }
+  .listHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .listActions {
+    justify-content: flex-end;
+  }
+}
+
+/* =========================================================
+   MODAL DE CONFIRMACIÓN
+   ========================================================= */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modalContent {
+  background-color: #ffffff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #fee2e2;
+  animation: slideUp 0.2s ease-out;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  background-color: #C41E3A;
+  color: #ffffff;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Quicksand', sans-serif;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+  padding: 0;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+.modalBody {
+  padding: 20px;
+}
+
+.modalBlockFull {
+  background-color: #fff5f5;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: 1px solid #fee2e2;
+}
+
+.modalBlockLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #991b1b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.modalBlockValue {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #0f172a;
+  line-height: 1.5;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  background-color: #f8fafc;
+  border-top: 1px solid #fee2e2;
+}
+
+.btnDanger {
+  padding: 12px 22px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  background-color: #C41E3A;
+  border: 1px solid #C41E3A;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Quicksand', sans-serif;
+}
+
+.btnDanger:hover {
+  background-color: #a01830;
+  border-color: #a01830;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(15px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* =========================================================
+   CONTROLES DE CANTIDAD
+   ========================================================= */
+.thCenter {
+  text-align: center;
+}
+
+.cantidadControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.cantidadBtn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background-color: #fff5f5;
+  color: #C41E3A;
+  font-size: 1.15rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, color 0.15s;
+  font-family: 'Quicksand', sans-serif;
+  line-height: 1;
+  padding: 0;
+}
+
+.cantidadBtn:hover:not(:disabled) {
+  background-color: #C41E3A;
+  color: #ffffff;
+}
+
+.cantidadBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cantidadInput {
+  width: 48px;
+  height: 34px;
+  border: none;
+  border-left: 1px solid #fca5a5;
+  border-right: 1px solid #fca5a5;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  background-color: #ffffff;
+  font-family: 'Quicksand', sans-serif;
+  outline: none;
+  -moz-appearance: textfield;
+  padding: 0;
+}
+
+.cantidadInput::-webkit-outer-spin-button,
+.cantidadInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cantidadInput:focus {
+  background-color: #fff5f5;
+}

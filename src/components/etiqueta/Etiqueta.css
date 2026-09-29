@@ -8,10 +8,10 @@
    ==================================================== */
 
 .etiqueta-container {
-  width: 95mm;
-  height: 30mm;
-  max-width: 95mm;
-  max-height: 30mm;
+  width: 97mm;
+  height: 35mm;
+  max-width: 97mm;
+  max-height: 35mm;
   border: 1px solid #000000;
   border-radius: 2px;
   padding: 1.5mm 2.5mm;
@@ -44,7 +44,7 @@
 .formato-normal .sub-header {
   display: flex;
   justify-content: space-between;
-  font-size: 6pt;
+  font-size: 9pt;
   font-weight: bold;
   margin: 0.5mm 0;
   color: #222222;
@@ -84,7 +84,7 @@
 }
 
 .formato-normal .titulo-seccion {
-  font-size: 5.5pt;
+  font-size: 8.5pt;
   font-weight: bold;
   color: #333333;
   line-height: 1;
@@ -111,12 +111,12 @@
 }
 
 .formato-normal .pie-texto {
-  font-size: 5.5pt;
+  font-size: 8.3pt;
   font-weight: bold;
 }
 
 .formato-normal .pie-derecho {
-  font-size: 5.5pt;
+  font-size: 8.3pt;
   text-align: right;
   display: flex;
   flex-direction: column;
@@ -183,7 +183,7 @@
 }
 
 .formato-pack .precio-titulo {
-  font-size: 5.5pt;
+  font-size: 8.5pt;
   font-weight: bold;
   line-height: 1;
 }
