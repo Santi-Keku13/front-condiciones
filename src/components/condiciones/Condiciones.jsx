@@ -5,7 +5,7 @@ import ColectarPrecios from '../colectar/ColectarPrecios'; // 🆕
 import { useNotification } from '../../utilidades/useNotification';
 
 // 🆕 URL base del back — centralizada
-const API_BASE = "https://exterior-breath-assessing-php.trycloudflare.com";
+const API_BASE = "https://movie-brook-vic-except.trycloudflare.com";
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Etiqueta from "../etiqueta/Etiqueta";
 import styles from "./ColectarPrecios.module.css";
 
-const JSON_URL = "https://exterior-breath-assessing-php.trycloudflare.com/api/productos_cache.json";
+const JSON_URL = "https://movie-brook-vic-except.trycloudflare.com/api/productos_cache.json";
 const CACHE_KEY = "colector_precios_cache_v1";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 const IVA = 1.21;
