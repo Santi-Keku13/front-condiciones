@@ -6,7 +6,7 @@ const JSON_URL = "https://movie-brook-vic-except.trycloudflare.com/api/productos
 const CACHE_KEY = "colector_precios_cache_v1";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 const IVA = 1.21;
-const CANTIDAD_MAX = 99; // 🆕 límite por producto
+const CANTIDAD_MAX = 99;
 
 // ---------- helpers ----------
 const formatoPrecio = (n) =>
@@ -15,6 +15,7 @@ const formatoPrecio = (n) =>
     maximumFractionDigits: 2,
   });
 
+// 🌟 Fallback: sigue existiendo por si algún artículo viejo no trae tipoPresentacion
 const esPackPorDescripcion = (desc = "") =>
   /(^|\s)PACK(\s|$|\s?X\s?\d+)/i.test(desc);
 
@@ -30,13 +31,35 @@ const hoy = () => {
   ).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
+// 🌟 NUEVO: determina si un item es pack usando el backend (con fallback por descripción)
+const esPack = (item) =>
+  item?.tipoPresentacion === "pack" ||
+  item?.itemPresentacion === 2 ||
+  item?.itemPresentacion === 3 ||
+  esPackPorDescripcion(item?.articulo || "");
+
+// 🌟 NUEVO: cantidad de unidades (viene del backend; fallback = 1)
+const cantUnidadesDe = (item) => {
+  const n = Number(item?.cantUnidades);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+};
+
+// 🌟 NUEVO: etiqueta corta del tipo (para badge y toast)
+const etiquetaTipo = (item) => {
+  if (!esPack(item)) return "NORMAL";
+  return `PACK x${cantUnidadesDe(item)}`;
+};
+
 const mapearAEtiqueta = (item) => {
-  const esPack = esPackPorDescripcion(item.articulo);
+  // 🌟 Ahora usa el backend en vez de adivinar por el nombre
+  const pack = esPack(item);
+  const cantUnidades = cantUnidadesDe(item);
+
   const precioFinal = Number(item.precioFinal || item.precioLista5 || 0);
   const precioSinImp = precioFinal / IVA;
 
   return {
-    tipo: esPack ? "PACK" : "NORMAL",
+    tipo: pack ? "PACK" : "NORMAL",
     datos: {
       descripcion: item.articulo,
       fecha: item.vigenciaHasta || hoy(),
@@ -51,7 +74,8 @@ const mapearAEtiqueta = (item) => {
       compraMinima: item.tieneCondicion
         ? extraerCantidadMinima(item.condicionTexto)
         : "",
-      CantUni: esPack ? extraerCantidadMinima(item.articulo) || 1 : 1,
+      // 🌟 Ahora viene del backend
+      CantUni: pack ? cantUnidades : 1,
     },
   };
 };
@@ -164,10 +188,7 @@ const ColectarPrecios = () => {
       return;
     }
 
-    // 🆕 Si ya está en la lista, incrementamos la cantidad
-    const existente = items.find(
-      (i) => i.scanner === codigo && !i.error
-    );
+    const existente = items.find((i) => i.scanner === codigo && !i.error);
     if (existente) {
       setItems((prev) =>
         prev.map((i) =>
@@ -200,8 +221,9 @@ const ColectarPrecios = () => {
       ]);
       pushToast("error", "No encontrado", `El código ${codigo} no existe`);
     } else {
-      setItems((prev) => [...prev, { ...prod, cantidad: 1 }]); // 🆕 cantidad inicial
-      pushToast("success", "Agregado", prod.articulo);
+      setItems((prev) => [...prev, { ...prod, cantidad: 1 }]);
+      // 🌟 Toast muestra si es PACK xN o NORMAL
+      pushToast("success", "Agregado", `${prod.articulo} · ${etiquetaTipo(prod)}`);
     }
 
     setCodigoInput("");
@@ -212,18 +234,19 @@ const ColectarPrecios = () => {
   const eliminarItem = (scanner) =>
     setItems((prev) => prev.filter((i) => i.scanner !== scanner));
 
-  // 🆕 Cambiar cantidad de un producto
   const cambiarCantidad = (scanner, delta) => {
     setItems((prev) =>
       prev.map((i) => {
         if (i.scanner !== scanner || i.error) return i;
-        const nueva = Math.max(1, Math.min((i.cantidad || 1) + delta, CANTIDAD_MAX));
+        const nueva = Math.max(
+          1,
+          Math.min((i.cantidad || 1) + delta, CANTIDAD_MAX)
+        );
         return { ...i, cantidad: nueva };
       })
     );
   };
 
-  // 🆕 Setear cantidad directamente (por si escriben el número)
   const setearCantidad = (scanner, valor) => {
     const num = parseInt(valor, 10);
     if (isNaN(num)) return;
@@ -261,19 +284,16 @@ const ColectarPrecios = () => {
   // ---------- Derivados ----------
   const itemsValidos = useMemo(() => items.filter((i) => !i.error), [items]);
 
-  // 🆕 Total de etiquetas = suma de cantidades
   const totalEtiquetas = useMemo(
     () => itemsValidos.reduce((acc, i) => acc + (i.cantidad || 1), 0),
     [itemsValidos]
   );
 
-  // 🆕 Para contar también los errores al vaciar
   const totalItems = useMemo(
     () => items.reduce((acc, i) => acc + (i.error ? 1 : i.cantidad || 1), 0),
     [items]
   );
 
-  // 🆕 Genera las etiquetas repetidas según cantidad
   const etiquetasMapeadas = useMemo(() => {
     const result = [];
     itemsValidos.forEach((item) => {
@@ -451,21 +471,20 @@ const ColectarPrecios = () => {
                       </span>
                     )}
                   </td>
+                  {/* 🌟 Ahora el badge usa el tipo que viene del backend */}
                   <td className={styles.td}>
                     {!item.error && (
                       <span
                         className={
-                          esPackPorDescripcion(item.articulo)
-                            ? styles.badgePack
-                            : styles.badgeNormal
+                          esPack(item) ? styles.badgePack : styles.badgeNormal
                         }
                       >
-                        {esPackPorDescripcion(item.articulo) ? "PACK" : "NORMAL"}
+                        {etiquetaTipo(item)}
                       </span>
                     )}
                   </td>
 
-                  {/* 🆕 CONTROLES DE CANTIDAD */}
+                  {/* CONTROLES DE CANTIDAD */}
                   <td className={styles.td}>
                     {!item.error && (
                       <div className={styles.cantidadControl}>
