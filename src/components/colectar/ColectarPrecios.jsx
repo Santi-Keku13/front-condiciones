@@ -15,7 +15,6 @@ const formatoPrecio = (n) =>
     maximumFractionDigits: 2,
   });
 
-// 🌟 Fallback: sigue existiendo por si algún artículo viejo no trae tipoPresentacion
 const esPackPorDescripcion = (desc = "") =>
   /(^|\s)PACK(\s|$|\s?X\s?\d+)/i.test(desc);
 
@@ -31,50 +30,55 @@ const hoy = () => {
   ).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
-// 🌟 NUEVO: determina si un item es pack usando el backend (con fallback por descripción)
 const esPack = (item) =>
   item?.tipoPresentacion === "pack" ||
   item?.itemPresentacion === 2 ||
   item?.itemPresentacion === 3 ||
   esPackPorDescripcion(item?.articulo || "");
 
-// 🌟 NUEVO: cantidad de unidades (viene del backend; fallback = 1)
 const cantUnidadesDe = (item) => {
   const n = Number(item?.cantUnidades);
   return Number.isFinite(n) && n > 0 ? n : 1;
 };
 
-// 🌟 NUEVO: etiqueta corta del tipo (para badge y toast)
 const etiquetaTipo = (item) => {
-  if (!esPack(item)) return "NORMAL";
-  return `PACK x${cantUnidadesDe(item)}`;
+  const tieneCondicion = item?.tieneCondicion && item?.precioCondicion > 0;
+  return tieneCondicion ? "NORMAL CON CONDICION" : "NORMAL";
 };
 
 const mapearAEtiqueta = (item) => {
-  // 🌟 Ahora usa el backend en vez de adivinar por el nombre
   const pack = esPack(item);
   const cantUnidades = cantUnidadesDe(item);
+  const tieneCondicion = item.tieneCondicion && item.precioCondicion > 0;
 
   const precioFinal = Number(item.precioFinal || item.precioLista5 || 0);
   const precioSinImp = precioFinal / IVA;
 
+  // 🌟 PRIORIDAD: CONDICION > PACK > NORMAL
+  let tipoEtiqueta;
+  if (tieneCondicion) {
+    tipoEtiqueta = "CONDICION";
+  } else if (pack) {
+    tipoEtiqueta = "PACK";
+  } else {
+    tipoEtiqueta = "NORMAL";
+  }
+
   return {
-    tipo: pack ? "PACK" : "NORMAL",
+    tipo: tipoEtiqueta,
     datos: {
       descripcion: item.articulo,
       fecha: item.vigenciaHasta || hoy(),
-      codigoInterno: item.scanner,
+      codigoInterno: item.idArticulo || item.scanner,
       codigoBarras: item.scanner,
       precioUnitario: formatoPrecio(precioFinal),
       precioSinImpuesto: formatoPrecio(precioSinImp),
-      precioCantidad:
-        item.tieneCondicion && item.precioCondicion > 0
-          ? formatoPrecio(item.precioCondicion)
-          : "",
-      compraMinima: item.tieneCondicion
+      precioCantidad: tieneCondicion
+        ? formatoPrecio(item.precioCondicion)
+        : "",
+      compraMinima: tieneCondicion
         ? extraerCantidadMinima(item.condicionTexto)
         : "",
-      // 🌟 Ahora viene del backend
       CantUni: pack ? cantUnidades : 1,
     },
   };
@@ -222,7 +226,6 @@ const ColectarPrecios = () => {
       pushToast("error", "No encontrado", `El código ${codigo} no existe`);
     } else {
       setItems((prev) => [...prev, { ...prod, cantidad: 1 }]);
-      // 🌟 Toast muestra si es PACK xN o NORMAL
       pushToast("success", "Agregado", `${prod.articulo} · ${etiquetaTipo(prod)}`);
     }
 
@@ -431,6 +434,7 @@ const ColectarPrecios = () => {
             <thead className={styles.thead}>
               <tr>
                 <th className={styles.th}>Código</th>
+                <th className={styles.th}>CI</th>
                 <th className={styles.th}>Artículo</th>
                 <th className={styles.th}>Precio final</th>
                 <th className={styles.th}>Condición</th>
@@ -447,6 +451,13 @@ const ColectarPrecios = () => {
                 >
                   <td className={`${styles.td} ${styles.tdBold}`}>
                     {item.scanner}
+                  </td>
+                  <td className={`${styles.td} ${styles.tdBold}`}>
+                    {item.error ? (
+                      <span className={styles.errorText}>—</span>
+                    ) : (
+                      item.idArticulo || "—"
+                    )}
                   </td>
                   <td className={styles.td}>
                     {item.error ? (
@@ -471,7 +482,6 @@ const ColectarPrecios = () => {
                       </span>
                     )}
                   </td>
-                  {/* 🌟 Ahora el badge usa el tipo que viene del backend */}
                   <td className={styles.td}>
                     {!item.error && (
                       <span
@@ -484,7 +494,6 @@ const ColectarPrecios = () => {
                     )}
                   </td>
 
-                  {/* CONTROLES DE CANTIDAD */}
                   <td className={styles.td}>
                     {!item.error && (
                       <div className={styles.cantidadControl}>
