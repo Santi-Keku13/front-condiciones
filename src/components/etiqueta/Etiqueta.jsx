@@ -1,10 +1,17 @@
 import React from 'react';
 import './Etiqueta.css';
 
+// 🌟 La fecha de la etiqueta SIEMPRE es la fecha de impresión
+const fechaImpresion = () => {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, '0')}/${String(
+    d.getMonth() + 1
+  ).padStart(2, '0')}/${d.getFullYear()}`;
+};
+
 function Etiqueta({ tipo = 'NORMAL', datos = {} }) {
   const {
     descripcion = 'DESCRIPCIÓN DEL PRODUCTO',
-    fecha = '00/00/0000',
     codigoInterno = '00000',
     codigoBarras = '0000000000000',
     precioUnitario = '0.00',
@@ -13,6 +20,9 @@ function Etiqueta({ tipo = 'NORMAL', datos = {} }) {
     compraMinima = '',
     CantUni = 1
   } = datos;
+
+  // 🌟 Siempre la fecha del día (ignora cualquier 'fecha' que llegue en datos)
+  const fecha = fechaImpresion();
 
   // ============================
   // FORMATO PACK
@@ -55,7 +65,7 @@ function Etiqueta({ tipo = 'NORMAL', datos = {} }) {
   }
 
   // ============================
-  // FORMATO CONDICION (nuevo)
+  // FORMATO CONDICION
   // ============================
   if (tipo === 'CONDICION') {
     return (
@@ -69,7 +79,6 @@ function Etiqueta({ tipo = 'NORMAL', datos = {} }) {
         </div>
 
         <div className="body-content">
-          {/* LADO IZQUIERDO: PRECIO X VOLUMEN */}
           <div className="col-izq">
             <span className="titulo-seccion">PRECIO X VOLUMEN</span>
 
@@ -83,7 +92,6 @@ function Etiqueta({ tipo = 'NORMAL', datos = {} }) {
             </span>
           </div>
 
-          {/* LADO DERECHO: PRECIO UNITARIO */}
           <div className="col-der">
             <span className="titulo-seccion">PRECIO UNITARIO</span>
 
@@ -99,7 +107,6 @@ function Etiqueta({ tipo = 'NORMAL', datos = {} }) {
           </div>
         </div>
 
-        {/* 🌟 Si además es pack, mostramos el badge abajo */}
         {CantUni > 1 && (
           <div className="badge-pack-condicion">
             PACK X {CantUni}

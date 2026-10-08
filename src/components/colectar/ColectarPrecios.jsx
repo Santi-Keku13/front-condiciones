@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Etiqueta from "../etiqueta/Etiqueta";
 import styles from "./ColectarPrecios.module.css";
+import { API_URL, ENDPOINTS } from "../../config";
 
-const JSON_URL = "https://movie-brook-vic-except.trycloudflare.com/api/productos_cache.json";
-const CACHE_KEY = "colector_precios_cache_v1";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 const IVA = 1.21;
 const CANTIDAD_MAX = 99;
@@ -23,13 +22,6 @@ const extraerCantidadMinima = (texto = "") => {
   return m ? m[1] : "";
 };
 
-const hoy = () => {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2, "0")}/${String(
-    d.getMonth() + 1
-  ).padStart(2, "0")}/${d.getFullYear()}`;
-};
-
 const esPack = (item) =>
   item?.tipoPresentacion === "pack" ||
   item?.itemPresentacion === 2 ||
@@ -42,41 +34,30 @@ const cantUnidadesDe = (item) => {
 };
 
 const etiquetaTipo = (item) => {
-  const tieneCondicion = item?.tieneCondicion && item?.precioCondicion > 0;
-  return tieneCondicion ? "NORMAL CON CONDICION" : "NORMAL";
+  if (!esPack(item)) return "NORMAL";
+  return `PACK x${cantUnidadesDe(item)}`;
 };
 
 const mapearAEtiqueta = (item) => {
   const pack = esPack(item);
   const cantUnidades = cantUnidadesDe(item);
-  const tieneCondicion = item.tieneCondicion && item.precioCondicion > 0;
 
   const precioFinal = Number(item.precioFinal || item.precioLista5 || 0);
   const precioSinImp = precioFinal / IVA;
 
-  // 🌟 PRIORIDAD: CONDICION > PACK > NORMAL
-  let tipoEtiqueta;
-  if (tieneCondicion) {
-    tipoEtiqueta = "CONDICION";
-  } else if (pack) {
-    tipoEtiqueta = "PACK";
-  } else {
-    tipoEtiqueta = "NORMAL";
-  }
-
   return {
-    tipo: tipoEtiqueta,
+    tipo: pack ? "PACK" : "NORMAL",
     datos: {
       descripcion: item.articulo,
-      fecha: item.vigenciaHasta || hoy(),
-      codigoInterno: item.idArticulo || item.scanner,
+      codigoInterno: String(item.idArticulo || ""),
       codigoBarras: item.scanner,
       precioUnitario: formatoPrecio(precioFinal),
       precioSinImpuesto: formatoPrecio(precioSinImp),
-      precioCantidad: tieneCondicion
-        ? formatoPrecio(item.precioCondicion)
-        : "",
-      compraMinima: tieneCondicion
+      precioCantidad:
+        item.tieneCondicion && item.precioCondicion > 0
+          ? formatoPrecio(item.precioCondicion)
+          : "",
+      compraMinima: item.tieneCondicion
         ? extraerCantidadMinima(item.condicionTexto)
         : "",
       CantUni: pack ? cantUnidades : 1,
@@ -90,9 +71,28 @@ const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 // COMPONENTE
 // ============================================================
 const ColectarPrecios = () => {
+  // 🌟 Sucursal leída DENTRO del componente (en cada mount)
+  const sucursalActual = useMemo(
+    () => (typeof window !== "undefined" && localStorage.getItem("sucursal")) || "acceso",
+    []
+  );
+
+  const JSON_URL = useMemo(
+    () => ENDPOINTS.productosCache(sucursalActual),
+    [sucursalActual]
+  );
+  const REGENERAR_URL = ENDPOINTS.regenerarCache;
+  const CACHE_KEY = `colector_precios_cache_v1_${sucursalActual}`;
+
+  // 🔍 Debug
+  console.log("[Colector] Sucursal:", sucursalActual);
+  console.log("[Colector] JSON_URL:", JSON_URL);
+  console.log("[Colector] CACHE_KEY:", CACHE_KEY);
+
   const [cache, setCache] = useState(null);
   const [cargandoCache, setCargandoCache] = useState(true);
   const [errorCache, setErrorCache] = useState(null);
+  const [regenerando, setRegenerando] = useState(false);
 
   const [codigoInput, setCodigoInput] = useState("");
   const [items, setItems] = useState([]);
@@ -130,7 +130,7 @@ const ColectarPrecios = () => {
               pushToast(
                 "info",
                 "Cache cargado",
-                `${parsed.data.total_productos} productos disponibles`
+                `${parsed.data.total_productos} productos (${sucursalActual})`
               );
               return;
             }
@@ -141,12 +141,19 @@ const ColectarPrecios = () => {
       }
 
       try {
-        const res = await fetch(`${JSON_URL}?t=${Date.now()}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const data = await res.json();
+        const urlFinal = `${JSON_URL}${JSON_URL.includes("?") ? "&" : "?"}t=${Date.now()}`;
+        console.log("[Colector] Fetching:", urlFinal);
 
+        const res = await fetch(urlFinal, { cache: "no-store" });
+        console.log("[Colector] Response status:", res.status);
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("[Colector] Error body:", errText);
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
         if (!data?.items) throw new Error("JSON sin campo 'items'");
 
         setCache(data);
@@ -155,23 +162,39 @@ const ColectarPrecios = () => {
             CACHE_KEY,
             JSON.stringify({ ts: Date.now(), data })
           );
-        } catch {
-          /* localStorage lleno → no pasa nada */
-        }
+        } catch {}
+
         pushToast(
           "success",
           "Precios cargados",
-          `${data.total_productos} productos · actualizado ${data.ultima_actualizacion}`
+          `${data.total_productos} productos · ${sucursalActual.toUpperCase()}`
         );
       } catch (e) {
+        console.error("[Colector] Error:", e);
         setErrorCache(e.message || "Error al cargar precios");
         pushToast("error", "Error al cargar precios", e.message);
       } finally {
         setCargandoCache(false);
       }
     },
-    [pushToast]
+    [pushToast, JSON_URL, CACHE_KEY, sucursalActual]
   );
+
+  // ---------- Regenerar cache ----------
+  const regenerarYRecargar = useCallback(async () => {
+    setRegenerando(true);
+    try {
+      pushToast("info", "Actualizando", "Regenerando precios en el servidor...");
+      const res = await fetch(REGENERAR_URL, { method: "POST" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      await res.json();
+      await cargarJSON(true);
+    } catch (e) {
+      pushToast("error", "Error al regenerar", e.message);
+    } finally {
+      setRegenerando(false);
+    }
+  }, [cargarJSON, pushToast]);
 
   useEffect(() => {
     cargarJSON(false);
@@ -204,7 +227,7 @@ const ColectarPrecios = () => {
       pushToast(
         "info",
         "Cantidad aumentada",
-        `${existente.articulo} → ${(existente.cantidad || 1) + 1} etiquetas`
+        `${existente.articulo} → ${(existente.cantidad || 1) + 1}`
       );
       setCodigoInput("");
       inputRef.current?.focus();
@@ -212,23 +235,16 @@ const ColectarPrecios = () => {
     }
 
     const prod = cache.items[codigo];
-
     if (!prod) {
       setItems((prev) => [
         ...prev,
-        {
-          scanner: codigo,
-          articulo: "Código no encontrado",
-          error: true,
-          cantidad: 1,
-        },
+        { scanner: codigo, articulo: "Código no encontrado", error: true, cantidad: 1 },
       ]);
       pushToast("error", "No encontrado", `El código ${codigo} no existe`);
     } else {
       setItems((prev) => [...prev, { ...prod, cantidad: 1 }]);
       pushToast("success", "Agregado", `${prod.articulo} · ${etiquetaTipo(prod)}`);
     }
-
     setCodigoInput("");
     inputRef.current?.focus();
   };
@@ -241,10 +257,7 @@ const ColectarPrecios = () => {
     setItems((prev) =>
       prev.map((i) => {
         if (i.scanner !== scanner || i.error) return i;
-        const nueva = Math.max(
-          1,
-          Math.min((i.cantidad || 1) + delta, CANTIDAD_MAX)
-        );
+        const nueva = Math.max(1, Math.min((i.cantidad || 1) + delta, CANTIDAD_MAX));
         return { ...i, cantidad: nueva };
       })
     );
@@ -274,11 +287,7 @@ const ColectarPrecios = () => {
 
   const imprimir = () => {
     if (!items.filter((i) => !i.error).length) {
-      pushToast(
-        "warning",
-        "Nada para imprimir",
-        "Escaneá al menos un código válido"
-      );
+      pushToast("warning", "Nada para imprimir", "Escaneá al menos un código válido");
       return;
     }
     window.print();
@@ -302,9 +311,7 @@ const ColectarPrecios = () => {
     itemsValidos.forEach((item) => {
       const cantidad = item.cantidad || 1;
       const etiqueta = mapearAEtiqueta(item);
-      for (let i = 0; i < cantidad; i++) {
-        result.push(etiqueta);
-      }
+      for (let i = 0; i < cantidad; i++) result.push(etiqueta);
     });
     return result;
   }, [itemsValidos]);
@@ -318,7 +325,7 @@ const ColectarPrecios = () => {
         <h1 className={styles.title}>Colector de Precios</h1>
         <div className={styles.loadingState}>
           <div className={styles.spinner} />
-          <p>Cargando lista de precios...</p>
+          <p>Cargando lista de precios de <strong>{sucursalActual.toUpperCase()}</strong>...</p>
         </div>
       </div>
     );
@@ -329,8 +336,11 @@ const ColectarPrecios = () => {
       <div className={styles.container}>
         <h1 className={styles.title}>Colector de Precios</h1>
         <div className={styles.errorState}>
-          <p>❌ No se pudieron cargar los precios</p>
+          <p>❌ No se pudieron cargar los precios de <strong>{sucursalActual.toUpperCase()}</strong></p>
           <span>{errorCache}</span>
+          <span style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "8px" }}>
+            URL: {JSON_URL}
+          </span>
           <button className={styles.btnPrimary} onClick={() => cargarJSON(true)}>
             Reintentar
           </button>
@@ -348,10 +358,13 @@ const ColectarPrecios = () => {
           <div className={styles.cacheBadge}>
             <span className={styles.cacheDot} />
             <div className={styles.cacheInfo}>
+              <span className={styles.cacheLabel}>Sucursal</span>
+              <span className={styles.cacheValue}>{sucursalActual.toUpperCase()}</span>
+            </div>
+            <span className={styles.cacheDivider} />
+            <div className={styles.cacheInfo}>
               <span className={styles.cacheLabel}>Última actualización</span>
-              <span className={styles.cacheValue}>
-                {cache.ultima_actualizacion}
-              </span>
+              <span className={styles.cacheValue}>{cache.ultima_actualizacion}</span>
             </div>
             <span className={styles.cacheDivider} />
             <div className={styles.cacheInfo}>
@@ -363,10 +376,18 @@ const ColectarPrecios = () => {
             <button
               className={styles.btnRefresh}
               onClick={() => cargarJSON(true)}
-              disabled={cargandoCache}
-              title="Recargar precios"
+              disabled={cargandoCache || regenerando}
+              title="Recargar JSON"
             >
               {cargandoCache ? "..." : "↻"}
+            </button>
+            <button
+              className={styles.btnRefresh}
+              onClick={regenerarYRecargar}
+              disabled={cargandoCache || regenerando}
+              title="Regenerar precios desde la BD"
+            >
+              {regenerando ? "..." : "⟳"}
             </button>
           </div>
         )}
@@ -389,11 +410,7 @@ const ColectarPrecios = () => {
             autoComplete="off"
           />
         </div>
-        <button
-          type="submit"
-          className={styles.btnPrimary}
-          disabled={!codigoInput.trim()}
-        >
+        <button type="submit" className={styles.btnPrimary} disabled={!codigoInput.trim()}>
           Agregar
         </button>
       </form>
@@ -401,22 +418,13 @@ const ColectarPrecios = () => {
       {/* ---------- CABECERA DE LISTA ---------- */}
       <div className={styles.listHeader}>
         <h2 className={styles.listTitle}>
-          Lista de etiquetas{" "}
-          <span className={styles.counter}>{totalEtiquetas}</span>
+          Lista de etiquetas <span className={styles.counter}>{totalEtiquetas}</span>
         </h2>
         <div className={styles.listActions}>
-          <button
-            onClick={limpiarLista}
-            className={styles.btnGhost}
-            disabled={!items.length}
-          >
+          <button onClick={limpiarLista} className={styles.btnGhost} disabled={!items.length}>
             Vaciar
           </button>
-          <button
-            onClick={imprimir}
-            className={styles.btnPrimary}
-            disabled={!totalEtiquetas}
-          >
+          <button onClick={imprimir} className={styles.btnPrimary} disabled={!totalEtiquetas}>
             🖨️ Imprimir etiquetas
           </button>
         </div>
@@ -434,7 +442,6 @@ const ColectarPrecios = () => {
             <thead className={styles.thead}>
               <tr>
                 <th className={styles.th}>Código</th>
-                <th className={styles.th}>CI</th>
                 <th className={styles.th}>Artículo</th>
                 <th className={styles.th}>Precio final</th>
                 <th className={styles.th}>Condición</th>
@@ -449,21 +456,10 @@ const ColectarPrecios = () => {
                   key={item.scanner}
                   className={`${styles.tr} ${item.error ? styles.trError : ""}`}
                 >
-                  <td className={`${styles.td} ${styles.tdBold}`}>
-                    {item.scanner}
-                  </td>
-                  <td className={`${styles.td} ${styles.tdBold}`}>
-                    {item.error ? (
-                      <span className={styles.errorText}>—</span>
-                    ) : (
-                      item.idArticulo || "—"
-                    )}
-                  </td>
+                  <td className={`${styles.td} ${styles.tdBold}`}>{item.scanner}</td>
                   <td className={styles.td}>
                     {item.error ? (
-                      <span className={styles.errorText}>
-                        ❌ Código no encontrado
-                      </span>
+                      <span className={styles.errorText}>❌ Código no encontrado</span>
                     ) : (
                       item.articulo
                     )}
@@ -477,23 +473,16 @@ const ColectarPrecios = () => {
                   </td>
                   <td className={styles.td}>
                     {!item.error && item.tieneCondicion && (
-                      <span className={styles.badgeCondicion}>
-                        {item.condicionTexto}
-                      </span>
+                      <span className={styles.badgeCondicion}>{item.condicionTexto}</span>
                     )}
                   </td>
                   <td className={styles.td}>
                     {!item.error && (
-                      <span
-                        className={
-                          esPack(item) ? styles.badgePack : styles.badgeNormal
-                        }
-                      >
+                      <span className={esPack(item) ? styles.badgePack : styles.badgeNormal}>
                         {etiquetaTipo(item)}
                       </span>
                     )}
                   </td>
-
                   <td className={styles.td}>
                     {!item.error && (
                       <div className={styles.cantidadControl}>
@@ -502,7 +491,6 @@ const ColectarPrecios = () => {
                           className={styles.cantidadBtn}
                           onClick={() => cambiarCantidad(item.scanner, -1)}
                           disabled={(item.cantidad || 1) <= 1}
-                          title="Restar 1"
                         >
                           −
                         </button>
@@ -510,9 +498,7 @@ const ColectarPrecios = () => {
                           type="number"
                           className={styles.cantidadInput}
                           value={item.cantidad || 1}
-                          onChange={(e) =>
-                            setearCantidad(item.scanner, e.target.value)
-                          }
+                          onChange={(e) => setearCantidad(item.scanner, e.target.value)}
                           min="1"
                           max={CANTIDAD_MAX}
                         />
@@ -521,19 +507,16 @@ const ColectarPrecios = () => {
                           className={styles.cantidadBtn}
                           onClick={() => cambiarCantidad(item.scanner, 1)}
                           disabled={(item.cantidad || 1) >= CANTIDAD_MAX}
-                          title="Sumar 1"
                         >
                           +
                         </button>
                       </div>
                     )}
                   </td>
-
                   <td className={styles.td}>
                     <button
                       className={styles.btnDelete}
                       onClick={() => eliminarItem(item.scanner)}
-                      title="Eliminar"
                     >
                       ✕
                     </button>
@@ -563,10 +546,7 @@ const ColectarPrecios = () => {
               <span className={styles.toastTitle}>{t.titulo}</span>
               <span className={styles.toastMessage}>{t.mensaje}</span>
             </div>
-            <button
-              className={styles.toastClose}
-              onClick={() => removeToast(t.id)}
-            >
+            <button className={styles.toastClose} onClick={() => removeToast(t.id)}>
               ×
             </button>
           </div>
@@ -575,24 +555,14 @@ const ColectarPrecios = () => {
 
       {/* ---------- MODAL CONFIRMAR VACIAR ---------- */}
       {confirmarVaciar && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setConfirmarVaciar(false)}
-        >
-          <div
-            className={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className={styles.modalOverlay} onClick={() => setConfirmarVaciar(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2>Confirmar acción</h2>
-              <button
-                className={styles.closeButton}
-                onClick={() => setConfirmarVaciar(false)}
-              >
+              <button className={styles.closeButton} onClick={() => setConfirmarVaciar(false)}>
                 ×
               </button>
             </div>
-
             <div className={styles.modalBody}>
               <div className={styles.modalBlockFull}>
                 <div className={styles.modalBlockLabel}>Vaciar lista</div>
@@ -604,12 +574,8 @@ const ColectarPrecios = () => {
                 </div>
               </div>
             </div>
-
             <div className={styles.modalFooter}>
-              <button
-                className={styles.btnGhost}
-                onClick={() => setConfirmarVaciar(false)}
-              >
+              <button className={styles.btnGhost} onClick={() => setConfirmarVaciar(false)}>
                 Cancelar
               </button>
               <button className={styles.btnDanger} onClick={confirmarLimpiar}>

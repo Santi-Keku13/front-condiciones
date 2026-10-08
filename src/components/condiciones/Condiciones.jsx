@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styles from './Condiciones.module.css';
 import CambiosPrecios from '../cambiosPrecios/CambiosPrecios';
-import ColectarPrecios from '../colectar/ColectarPrecios'; // 🆕
+import ColectarPrecios from '../colectar/ColectarPrecios';
 import { useNotification } from '../../utilidades/useNotification';
-
-// 🆕 URL base del back — centralizada
-const API_BASE = "https://movie-brook-vic-except.trycloudflare.com";
+import { API_URL, ENDPOINTS } from "../../config";   // 🌟 todo centralizado
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');
@@ -42,11 +40,11 @@ function Condiciones() {
   useEffect(() => {
     setCargando(true);
     Promise.all([
-      fetch(`${API_BASE}/api/condiciones`).then(res => {
+      fetch(ENDPOINTS.condiciones).then(res => {
         if (!res.ok) throw new Error("Error cargando condiciones");
         return res.json();
       }),
-      fetch(`${API_BASE}/api/cambios-precios`).then(res => {
+      fetch(ENDPOINTS.cambiosPrecios).then(res => {
         if (!res.ok) throw new Error("Error cargando cambios de precios");
         return res.json();
       }).catch(() => [])
@@ -183,7 +181,6 @@ function Condiciones() {
           Cambios de Precios del Día
         </button>
 
-        {/* 🆕 NUEVA PESTAÑA */}
         <button
           onClick={() => setPestanaActiva('COLECTOR')}
           className={`${styles.tabLink} ${pestanaActiva === 'COLECTOR' ? styles.tabLinkActive : ''}`}
@@ -377,9 +374,9 @@ function Condiciones() {
         />
       )}
 
-      {/* 🆕 CONTENIDO DE PESTAÑA 3: COLECTOR */}
+      {/* --- CONTENIDO DE PESTAÑA 3: COLECTOR --- */}
       {pestanaActiva === 'COLECTOR' && (
-        <ColectarPrecios apiBase={API_BASE} />
+        <ColectarPrecios apiBase={API_URL} />
       )}
 
       {/* --- MODAL COMPARTIDO Y DINÁMICO --- */}
