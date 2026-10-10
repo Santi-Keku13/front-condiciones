@@ -1,121 +1,65 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import Etiqueta from "../etiqueta/Etiqueta";
-import styles from "./ColectarPrecios.module.css";
-import { API_URL, ENDPOINTS } from "../../config";
+import Cenefa from "../cenefa/Cenefa";
+import styles from "./ColectarCenefas.module.css";
+import { ENDPOINTS } from "../../config";
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
-const IVA = 1.21;
 const CANTIDAD_MAX = 99;
 
 // ---------- helpers ----------
 const formatoPrecio = (n) =>
   Number(n || 0).toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   });
 
-const esPackPorDescripcion = (desc = "") =>
-  /(^|\s)PACK(\s|$|\s?X\s?\d+)/i.test(desc);
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const extraerCantidadMinima = (texto = "") => {
-  const m = texto.match(/LLEVANDO\s+(\d+)/i);
-  return m ? m[1] : "";
-};
+// 🌟 Mapea un item del JSON al formato de la cenefa
+const mapearACenefa = (item, tipoCenefa) => {
+  // 🎯 El "antes" es SIEMPRE el precio de Lista 5
+  // El backend lo expone como "precio5" (o "precio" que es igual a L5)
+  const precioAntes = Number(item.precio5 ?? item.precio ?? 0);
 
-const esPack = (item) =>
-  item?.tipoPresentacion === "pack" ||
-  item?.itemPresentacion === 2 ||
-  item?.itemPresentacion === 3 ||
-  esPackPorDescripcion(item?.articulo || "");
+  // 🎯 El "ahora" es el precio de oferta (cascada 12/14/7/15)
+  const precioAhora = Number(item.precioFinal ?? 0);
 
-const cantUnidadesDe = (item) => {
-  const n = Number(item?.cantUnidades);
-  return Number.isFinite(n) && n > 0 ? n : 1;
-};
-
-// 🌟 Nuevo: helper que respeta condición
-const etiquetaTipo = (item) => {
-  if (item?.tieneCondicion) return "CONDICIÓN";
-  if (!esPack(item)) return "NORMAL";
-  return `PACK x${cantUnidadesDe(item)}`;
-};
-
-const mapearAEtiqueta = (item) => {
-   console.log("[mapearAEtiqueta] Entrada:", {
-    scanner: item?.scanner,
-    tieneCondicion: item?.tieneCondicion,
-    tipo: typeof item?.tieneCondicion,
-    precioCondicion: item?.precioCondicion,
-    condicionTexto: item?.condicionTexto,
-  });
-  const pack = esPack(item);
-  const cantUnidades = cantUnidadesDe(item);
-
-  // 🌟 Detectar condición comercial
-  const tieneCondicion = item.tieneCondicion === true;
-
-  // 🌟 Decisión de tipo: condición > pack > normal
-  let tipo;
-  if (tieneCondicion) {
-    tipo = "CONDICION";
-  } else if (pack) {
-    tipo = "PACK";
-  } else {
-    tipo = "NORMAL";
-  }
-
-  // 🌟 Precio que va a la derecha (PRECIO UNITARIO) = precio final de venta
-  const precioFinal = Number(item.precioFinal || item.precioLista5 || 0);
-  const precioSinImp = precioFinal / IVA;
-
-  // 🌟 Precio que va a la izquierda (PRECIO X VOLUMEN) = precio con condición
-  const precioCondicion = Number(item.precioCondicion) || 0;
+  // 🎯 Solo mostramos "Antes" si hay oferta real
+  const hayOferta = precioAhora > 0 && precioAntes > 0 && precioAhora < precioAntes;
 
   return {
-    tipo,
+    tipo: tipoCenefa,
+    hayOferta,
     datos: {
       descripcion: item.articulo,
-      codigoInterno: String(item.idArticulo || ""),
-      codigoBarras: item.scanner,
-      precioUnitario: formatoPrecio(precioFinal),
-      precioSinImpuesto: formatoPrecio(precioSinImp),
-      precioCantidad: tieneCondicion ? formatoPrecio(precioCondicion) : "",
-      compraMinima: tieneCondicion
-        ? extraerCantidadMinima(item.condicionTexto)
-        : "",
-      CantUni: pack ? cantUnidades : 1,
+      precioAntes: formatoPrecio(precioAntes),
+      precioAhora: formatoPrecio(precioAhora),
+      codigo: item.idArticulo || "",
+      ean: item.scanner || "",
     },
   };
 };
 
-const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-
 // ============================================================
 // COMPONENTE
 // ============================================================
-const ColectarPrecios = () => {
-  // 🌟 Sucursal leída DENTRO del componente (en cada mount)
+const ColectarCenefas = () => {
   const sucursalActual = useMemo(
-    () => (typeof window !== "undefined" && localStorage.getItem("sucursal")) || "acceso",
+    () => localStorage.getItem("sucursal") || "acceso",
     []
   );
-
   const JSON_URL = useMemo(
     () => ENDPOINTS.productosCache(sucursalActual),
     [sucursalActual]
   );
-  const REGENERAR_URL = ENDPOINTS.regenerarCache;
   const CACHE_KEY = `colector_precios_cache_v1_${sucursalActual}`;
-
-  // 🔍 Debug
-  console.log("[Colector] Sucursal:", sucursalActual);
-  console.log("[Colector] JSON_URL:", JSON_URL);
-  console.log("[Colector] CACHE_KEY:", CACHE_KEY);
 
   const [cache, setCache] = useState(null);
   const [cargandoCache, setCargandoCache] = useState(true);
   const [errorCache, setErrorCache] = useState(null);
-  const [regenerando, setRegenerando] = useState(false);
+
+  // 🌟 Tipo de cenefa seleccionado (1, 2 o 3)
+  const [tipoCenefa, setTipoCenefa] = useState(1);
 
   const [codigoInput, setCodigoInput] = useState("");
   const [items, setItems] = useState([]);
@@ -150,32 +94,16 @@ const ColectarPrecios = () => {
             if (parsed?.ts && Date.now() - parsed.ts < CACHE_TTL_MS) {
               setCache(parsed.data);
               setCargandoCache(false);
-              pushToast(
-                "info",
-                "Cache cargado",
-                `${parsed.data.total_productos} productos (${sucursalActual})`
-              );
               return;
             }
           }
-        } catch {
-          /* cache corrupto → ignorar */
-        }
+        } catch {}
       }
 
       try {
         const urlFinal = `${JSON_URL}${JSON_URL.includes("?") ? "&" : "?"}t=${Date.now()}`;
-        console.log("[Colector] Fetching:", urlFinal);
-
         const res = await fetch(urlFinal, { cache: "no-store" });
-        console.log("[Colector] Response status:", res.status);
-
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error("[Colector] Error body:", errText);
-          throw new Error(`HTTP ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
         if (!data?.items) throw new Error("JSON sin campo 'items'");
 
@@ -186,14 +114,12 @@ const ColectarPrecios = () => {
             JSON.stringify({ ts: Date.now(), data })
           );
         } catch {}
-
         pushToast(
           "success",
           "Precios cargados",
           `${data.total_productos} productos · ${sucursalActual.toUpperCase()}`
         );
       } catch (e) {
-        console.error("[Colector] Error:", e);
         setErrorCache(e.message || "Error al cargar precios");
         pushToast("error", "Error al cargar precios", e.message);
       } finally {
@@ -202,22 +128,6 @@ const ColectarPrecios = () => {
     },
     [pushToast, JSON_URL, CACHE_KEY, sucursalActual]
   );
-
-  // ---------- Regenerar cache ----------
-  const regenerarYRecargar = useCallback(async () => {
-    setRegenerando(true);
-    try {
-      pushToast("info", "Actualizando", "Regenerando precios en el servidor...");
-      const res = await fetch(REGENERAR_URL, { method: "POST" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      await res.json();
-      await cargarJSON(true);
-    } catch (e) {
-      pushToast("error", "Error al regenerar", e.message);
-    } finally {
-      setRegenerando(false);
-    }
-  }, [cargarJSON, pushToast]);
 
   useEffect(() => {
     cargarJSON(false);
@@ -247,11 +157,7 @@ const ColectarPrecios = () => {
             : i
         )
       );
-      pushToast(
-        "info",
-        "Cantidad aumentada",
-        `${existente.articulo} → ${(existente.cantidad || 1) + 1}`
-      );
+      pushToast("info", "Cantidad aumentada", `${existente.articulo}`);
       setCodigoInput("");
       inputRef.current?.focus();
       return;
@@ -261,12 +167,17 @@ const ColectarPrecios = () => {
     if (!prod) {
       setItems((prev) => [
         ...prev,
-        { scanner: codigo, articulo: "Código no encontrado", error: true, cantidad: 1 },
+        {
+          scanner: codigo,
+          articulo: "Código no encontrado",
+          error: true,
+          cantidad: 1,
+        },
       ]);
       pushToast("error", "No encontrado", `El código ${codigo} no existe`);
     } else {
       setItems((prev) => [...prev, { ...prod, cantidad: 1 }]);
-      pushToast("success", "Agregado", `${prod.articulo} · ${etiquetaTipo(prod)}`);
+      pushToast("success", "Agregado", prod.articulo);
     }
     setCodigoInput("");
     inputRef.current?.focus();
@@ -280,7 +191,10 @@ const ColectarPrecios = () => {
     setItems((prev) =>
       prev.map((i) => {
         if (i.scanner !== scanner || i.error) return i;
-        const nueva = Math.max(1, Math.min((i.cantidad || 1) + delta, CANTIDAD_MAX));
+        const nueva = Math.max(
+          1,
+          Math.min((i.cantidad || 1) + delta, CANTIDAD_MAX)
+        );
         return { ...i, cantidad: nueva };
       })
     );
@@ -319,7 +233,7 @@ const ColectarPrecios = () => {
   // ---------- Derivados ----------
   const itemsValidos = useMemo(() => items.filter((i) => !i.error), [items]);
 
-  const totalEtiquetas = useMemo(
+  const totalCenefas = useMemo(
     () => itemsValidos.reduce((acc, i) => acc + (i.cantidad || 1), 0),
     [itemsValidos]
   );
@@ -329,15 +243,18 @@ const ColectarPrecios = () => {
     [items]
   );
 
-  const etiquetasMapeadas = useMemo(() => {
+  // 🌟 Cada cenefa ya sabe su tipo
+  const cenefasMapeadas = useMemo(() => {
     const result = [];
     itemsValidos.forEach((item) => {
       const cantidad = item.cantidad || 1;
-      const etiqueta = mapearAEtiqueta(item);
-      for (let i = 0; i < cantidad; i++) result.push(etiqueta);
+      const cenefa = mapearACenefa(item, tipoCenefa);
+      for (let i = 0; i < cantidad; i++) {
+        result.push(cenefa);
+      }
     });
     return result;
-  }, [itemsValidos]);
+  }, [itemsValidos, tipoCenefa]);
 
   // ============================================================
   // RENDER
@@ -345,10 +262,10 @@ const ColectarPrecios = () => {
   if (cargandoCache && !cache) {
     return (
       <div className={styles.container}>
-        <h1 className={styles.title}>Colector de Precios</h1>
+        <h1 className={styles.title}>Colector de Cenefas</h1>
         <div className={styles.loadingState}>
           <div className={styles.spinner} />
-          <p>Cargando lista de precios de <strong>{sucursalActual.toUpperCase()}</strong>...</p>
+          <p>Cargando precios de {sucursalActual.toUpperCase()}...</p>
         </div>
       </div>
     );
@@ -357,13 +274,10 @@ const ColectarPrecios = () => {
   if (errorCache && !cache) {
     return (
       <div className={styles.container}>
-        <h1 className={styles.title}>Colector de Precios</h1>
+        <h1 className={styles.title}>Colector de Cenefas</h1>
         <div className={styles.errorState}>
-          <p>❌ No se pudieron cargar los precios de <strong>{sucursalActual.toUpperCase()}</strong></p>
+          <p>❌ No se pudieron cargar los precios</p>
           <span>{errorCache}</span>
-          <span style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "8px" }}>
-            URL: {JSON_URL}
-          </span>
           <button className={styles.btnPrimary} onClick={() => cargarJSON(true)}>
             Reintentar
           </button>
@@ -376,44 +290,38 @@ const ColectarPrecios = () => {
     <div className={styles.container}>
       {/* ---------- HEADER ---------- */}
       <div className={styles.headerRow}>
-        <h1 className={styles.title}>Colector de Precios</h1>
-        {cache && (
-          <div className={styles.cacheBadge}>
-            <span className={styles.cacheDot} />
-            <div className={styles.cacheInfo}>
-              <span className={styles.cacheLabel}>Sucursal</span>
-              <span className={styles.cacheValue}>{sucursalActual.toUpperCase()}</span>
-            </div>
-            <span className={styles.cacheDivider} />
-            <div className={styles.cacheInfo}>
-              <span className={styles.cacheLabel}>Última actualización</span>
-              <span className={styles.cacheValue}>{cache.ultima_actualizacion}</span>
-            </div>
-            <span className={styles.cacheDivider} />
-            <div className={styles.cacheInfo}>
-              <span className={styles.cacheLabel}>Productos</span>
-              <span className={styles.cacheValue}>
-                {cache.total_productos.toLocaleString("es-AR")}
-              </span>
-            </div>
-            <button
-              className={styles.btnRefresh}
-              onClick={() => cargarJSON(true)}
-              disabled={cargandoCache || regenerando}
-              title="Recargar JSON"
-            >
-              {cargandoCache ? "..." : "↻"}
-            </button>
-            <button
-              className={styles.btnRefresh}
-              onClick={regenerarYRecargar}
-              disabled={cargandoCache || regenerando}
-              title="Regenerar precios desde la BD"
-            >
-              {regenerando ? "..." : "⟳"}
-            </button>
+        <h1 className={styles.title}>Colector de Cenefas</h1>
+        <div className={styles.cacheBadge}>
+          <span className={styles.cacheDot} />
+          <div className={styles.cacheInfo}>
+            <span className={styles.cacheLabel}>Sucursal</span>
+            <span className={styles.cacheValue}>{sucursalActual.toUpperCase()}</span>
           </div>
-        )}
+          <span className={styles.cacheDivider} />
+          <div className={styles.cacheInfo}>
+            <span className={styles.cacheLabel}>Productos</span>
+            <span className={styles.cacheValue}>
+              {cache?.total_productos?.toLocaleString("es-AR") || 0}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ---------- SELECTOR DE TIPO DE CENEFA ---------- */}
+      <div className={styles.tipoSelector}>
+        <span className={styles.tipoLabel}>Tipo de cenefa:</span>
+        {[1, 2, 3].map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={`${styles.tipoBtn} ${tipoCenefa === t ? styles.tipoBtnActive : ""}`}
+            onClick={() => setTipoCenefa(t)}
+          >
+            {t === 1 && "Tipo 1 — 99×138 (6/pág)"}
+            {t === 2 && "Tipo 2 — 99×93 (6/pág)"}
+            {t === 3 && "Tipo 3 — 198×93 (3/pág)"}
+          </button>
+        ))}
       </div>
 
       {/* ---------- INPUT DE ESCANEO ---------- */}
@@ -433,22 +341,26 @@ const ColectarPrecios = () => {
             autoComplete="off"
           />
         </div>
-        <button type="submit" className={styles.btnPrimary} disabled={!codigoInput.trim()}>
+        <button
+          type="submit"
+          className={styles.btnPrimary}
+          disabled={!codigoInput.trim()}
+        >
           Agregar
         </button>
       </form>
 
-      {/* ---------- CABECERA DE LISTA ---------- */}
+      {/* ---------- CABECERA ---------- */}
       <div className={styles.listHeader}>
         <h2 className={styles.listTitle}>
-          Lista de etiquetas <span className={styles.counter}>{totalEtiquetas}</span>
+          Lista de cenefas <span className={styles.counter}>{totalCenefas}</span>
         </h2>
         <div className={styles.listActions}>
           <button onClick={limpiarLista} className={styles.btnGhost} disabled={!items.length}>
             Vaciar
           </button>
-          <button onClick={imprimir} className={styles.btnPrimary} disabled={!totalEtiquetas}>
-            🖨️ Imprimir etiquetas
+          <button onClick={imprimir} className={styles.btnPrimary} disabled={!totalCenefas}>
+            🖨️ Imprimir cenefas
           </button>
         </div>
       </div>
@@ -466,9 +378,8 @@ const ColectarPrecios = () => {
               <tr>
                 <th className={styles.th}>Código</th>
                 <th className={styles.th}>Artículo</th>
-                <th className={styles.th}>Precio final</th>
-                <th className={styles.th}>Condición</th>
-                <th className={styles.th}>Tipo</th>
+                <th className={styles.th}>Antes (L5)</th>
+                <th className={styles.th}>Ahora</th>
                 <th className={`${styles.th} ${styles.thCenter}`}>Cantidad</th>
                 <th className={styles.th}></th>
               </tr>
@@ -487,31 +398,11 @@ const ColectarPrecios = () => {
                       item.articulo
                     )}
                   </td>
-                  <td className={styles.td}>
-                    {!item.error && (
-                      <span className={styles.precioFinal}>
-                        ${formatoPrecio(item.precioFinal)}
-                      </span>
-                    )}
+                  <td style={{ textDecoration: "line-through", color: "#666" }}>
+                    {!item.error && `$${formatoPrecio(item.precio5 ?? item.precio)}`}
                   </td>
-                  <td className={styles.td}>
-                    {!item.error && item.tieneCondicion && (
-                      <span className={styles.badgeCondicion}>{item.condicionTexto}</span>
-                    )}
-                  </td>
-                  {/* 🌟 Badge de tipo mejorado: condición / pack / normal */}
-                  <td className={styles.td}>
-                    {!item.error && (
-                      (() => {
-                        if (item.tieneCondicion) {
-                          return <span className={styles.badgeCondicion}>CONDICIÓN</span>;
-                        }
-                        if (esPack(item)) {
-                          return <span className={styles.badgePack}>{etiquetaTipo(item)}</span>;
-                        }
-                        return <span className={styles.badgeNormal}>NORMAL</span>;
-                      })()
-                    )}
+                  <td style={{ fontWeight: "bold", color: "#C41E3A" }}>
+                    {!item.error && `$${formatoPrecio(item.precioFinal)}`}
                   </td>
                   <td className={styles.td}>
                     {!item.error && (
@@ -559,9 +450,9 @@ const ColectarPrecios = () => {
       )}
 
       {/* ---------- SECCIÓN DE IMPRESIÓN ---------- */}
-      <div className="seccion-impresion-etiquetas">
-        {etiquetasMapeadas.map((e, i) => (
-          <Etiqueta key={i} tipo={e.tipo} datos={e.datos} />
+      <div className={`seccion-impresion-cenefas grid-tipo-${tipoCenefa}`}>
+        {cenefasMapeadas.map((c, i) => (
+          <Cenefa key={i} tipo={c.tipo} datos={c.datos} />
         ))}
       </div>
 
@@ -599,8 +490,7 @@ const ColectarPrecios = () => {
                 <div className={styles.modalBlockValue}>
                   ¿Estás seguro que querés eliminar los{" "}
                   <strong style={{ color: "#C41E3A" }}>{totalItems}</strong>{" "}
-                  {totalItems === 1 ? "código cargado" : "códigos cargados"}?
-                  Esta acción no se puede deshacer.
+                  {totalItems === 1 ? "cenefa" : "cenefas"}?
                 </div>
               </div>
             </div>
@@ -619,4 +509,4 @@ const ColectarPrecios = () => {
   );
 };
 
-export default ColectarPrecios;
+export default ColectarCenefas;

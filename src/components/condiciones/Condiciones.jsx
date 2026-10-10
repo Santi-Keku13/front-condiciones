@@ -4,6 +4,7 @@ import CambiosPrecios from '../cambiosPrecios/CambiosPrecios';
 import ColectarPrecios from '../colectar/ColectarPrecios';
 import { useNotification } from '../../utilidades/useNotification';
 import { API_URL, ENDPOINTS } from "../../config";   // 🌟 todo centralizado
+import ColectarCenefas from '../colectarCenefas/ColectarCenefas';
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');
@@ -186,6 +187,13 @@ function Condiciones() {
           className={`${styles.tabLink} ${pestanaActiva === 'COLECTOR' ? styles.tabLinkActive : ''}`}
         >
           Colector de Precios
+        </button>
+
+        <button
+          onClick={() => setPestanaActiva('CENEFAS')}
+          className={`${styles.tabLink} ${pestanaActiva === 'CENEFAS' ? styles.tabLinkActive : ''}`}
+        >
+          Colector de Cenefas
         </button>
       </div>
 
@@ -378,6 +386,10 @@ function Condiciones() {
       {pestanaActiva === 'COLECTOR' && (
         <ColectarPrecios apiBase={API_URL} />
       )}
+
+      {pestanaActiva === 'CENEFAS' && (
+          <ColectarCenefas />
+        )}
 
       {/* --- MODAL COMPARTIDO Y DINÁMICO --- */}
       {modalData && (
