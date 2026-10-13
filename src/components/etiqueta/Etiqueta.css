@@ -1,12 +1,13 @@
-/* Oculta las etiquetas en la pantalla del navegador */
+/* ====================================================
+   OCULTAR CONTENEDOR EN PANTALLA
+   ==================================================== */
 .seccion-impresion-etiquetas {
   display: none;
 }
 
 /* ====================================================
-   ESTILOS DE ETIQUETA - MEDIDAS DE GÓNDOLA (9.5 cm x 3 cm)
+   ESTILOS DE ETIQUETA - MEDIDAS DE GÓNDOLA (9.7 cm x 3.5 cm)
    ==================================================== */
-
 .etiqueta-container {
   width: 97mm;
   height: 35mm;
@@ -59,7 +60,6 @@
   padding-top: 0.5mm;
 }
 
-/* 🌟 Distribución 50/50 para equilibrar tamaños de precio */
 .formato-normal .col-izq {
   width: 48%;
   display: flex;
@@ -97,7 +97,6 @@
   margin: 1px 0;
 }
 
-/* 🌟 Símbolos y tipografías igualadas en ambas columnas */
 .formato-normal .simbolo-peso {
   font-size: 11pt;
   font-weight: bold;
@@ -124,10 +123,22 @@
   margin-top: 1px;
 }
 
-
 /* --- FORMATO PACK --- */
 .formato-pack {
   border: 1.5px solid #000000;
+}
+
+.formato-pack .header {
+  font-size: 9.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-bottom: 1px solid #000000;
+  padding-bottom: 1px;
+  line-height: 1.1;
+  height: 4mm;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .formato-pack .top-row {
@@ -137,6 +148,12 @@
   font-weight: bold;
   border-bottom: 1px solid #000000;
   padding-bottom: 1px;
+}
+
+.formato-pack .sub-header-ci {
+  font-size: 6.5pt;
+  font-weight: bold;
+  margin-top: 1px;
 }
 
 .formato-pack .sin-borde {
@@ -188,7 +205,13 @@
   line-height: 1;
 }
 
-.formato-pack .simbolo {
+.formato-pack .precio-container {
+  display: flex;
+  align-items: baseline;
+  line-height: 0.9;
+}
+
+.formato-pack .simbolo-peso {
   font-size: 11pt;
   font-weight: bold;
 }
@@ -199,7 +222,6 @@
   line-height: 0.9;
 }
 
-/* 🟢 PRECIO SIN IVA PARA LA ETIQUETA PACK */
 .formato-pack .precio-sin-iva-pack {
   font-size: 5.5pt;
   font-weight: bold;
@@ -224,31 +246,19 @@
 
 
 /* ====================================================
-   REGLAS EXCLUSIVAS DE IMPRESIÓN DE LA PÁGINA
+   DISTRIBUCIÓN DE IMPRESIÓN PARA ETIQUETAS DE GÓNDOLA
    ==================================================== */
 @media print {
-  body * {
-    visibility: hidden;
-  }
-
-  .seccion-impresion-etiquetas,
-  .seccion-impresion-etiquetas * {
-    visibility: visible;
-  }
-
-  .seccion-impresion-etiquetas {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 2mm 3mm !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
+  .seccion-impresion-portal.grid-etiquetas {
+    display: none;
+    grid-template-columns: repeat(2, 97mm) !important;
+    gap: 3mm 4mm !important;
+    padding: 5mm !important;
     background: #ffffff !important;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 5mm;
+  .etiqueta-container {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

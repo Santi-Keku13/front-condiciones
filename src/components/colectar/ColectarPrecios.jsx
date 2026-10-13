@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom"; // 🌟 IMPORTANTE: Agregado createPortal
 import Etiqueta from "../etiqueta/Etiqueta";
 import styles from "./ColectarPrecios.module.css";
 import { API_URL, ENDPOINTS } from "../../config";
@@ -7,7 +8,7 @@ const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 const IVA = 1.21;
 const CANTIDAD_MAX = 99;
 
-// ---------- helpers ----------
+// ---------- HELPERS ----------
 const formatoPrecio = (n) =>
   Number(n || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 2,
@@ -33,7 +34,6 @@ const cantUnidadesDe = (item) => {
   return Number.isFinite(n) && n > 0 ? n : 1;
 };
 
-// 🌟 Nuevo: helper que respeta condición
 const etiquetaTipo = (item) => {
   if (item?.tieneCondicion) return "CONDICIÓN";
   if (!esPack(item)) return "NORMAL";
@@ -41,20 +41,11 @@ const etiquetaTipo = (item) => {
 };
 
 const mapearAEtiqueta = (item) => {
-   console.log("[mapearAEtiqueta] Entrada:", {
-    scanner: item?.scanner,
-    tieneCondicion: item?.tieneCondicion,
-    tipo: typeof item?.tieneCondicion,
-    precioCondicion: item?.precioCondicion,
-    condicionTexto: item?.condicionTexto,
-  });
   const pack = esPack(item);
   const cantUnidades = cantUnidadesDe(item);
 
-  // 🌟 Detectar condición comercial
   const tieneCondicion = item.tieneCondicion === true;
 
-  // 🌟 Decisión de tipo: condición > pack > normal
   let tipo;
   if (tieneCondicion) {
     tipo = "CONDICION";
@@ -64,11 +55,8 @@ const mapearAEtiqueta = (item) => {
     tipo = "NORMAL";
   }
 
-  // 🌟 Precio que va a la derecha (PRECIO UNITARIO) = precio final de venta
   const precioFinal = Number(item.precioFinal || item.precioLista5 || 0);
   const precioSinImp = precioFinal / IVA;
-
-  // 🌟 Precio que va a la izquierda (PRECIO X VOLUMEN) = precio con condición
   const precioCondicion = Number(item.precioCondicion) || 0;
 
   return {
@@ -91,10 +79,9 @@ const mapearAEtiqueta = (item) => {
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // ============================================================
-// COMPONENTE
+// COMPONENTE PRINCIPAL
 // ============================================================
 const ColectarPrecios = () => {
-  // 🌟 Sucursal leída DENTRO del componente (en cada mount)
   const sucursalActual = useMemo(
     () => (typeof window !== "undefined" && localStorage.getItem("sucursal")) || "acceso",
     []
@@ -106,11 +93,6 @@ const ColectarPrecios = () => {
   );
   const REGENERAR_URL = ENDPOINTS.regenerarCache;
   const CACHE_KEY = `colector_precios_cache_v1_${sucursalActual}`;
-
-  // 🔍 Debug
-  console.log("[Colector] Sucursal:", sucursalActual);
-  console.log("[Colector] JSON_URL:", JSON_URL);
-  console.log("[Colector] CACHE_KEY:", CACHE_KEY);
 
   const [cache, setCache] = useState(null);
   const [cargandoCache, setCargandoCache] = useState(true);
@@ -124,7 +106,7 @@ const ColectarPrecios = () => {
 
   const inputRef = useRef(null);
 
-  // ---------- Toast ----------
+  // ---------- Toast Notifications ----------
   const pushToast = useCallback((tipo, titulo, mensaje) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, tipo, titulo, mensaje }]);
@@ -158,21 +140,15 @@ const ColectarPrecios = () => {
               return;
             }
           }
-        } catch {
-          /* cache corrupto → ignorar */
-        }
+        } catch {}
       }
 
       try {
         const urlFinal = `${JSON_URL}${JSON_URL.includes("?") ? "&" : "?"}t=${Date.now()}`;
-        console.log("[Colector] Fetching:", urlFinal);
-
         const res = await fetch(urlFinal, { cache: "no-store" });
-        console.log("[Colector] Response status:", res.status);
 
         if (!res.ok) {
           const errText = await res.text();
-          console.error("[Colector] Error body:", errText);
           throw new Error(`HTTP ${res.status}`);
         }
 
@@ -193,7 +169,6 @@ const ColectarPrecios = () => {
           `${data.total_productos} productos · ${sucursalActual.toUpperCase()}`
         );
       } catch (e) {
-        console.error("[Colector] Error:", e);
         setErrorCache(e.message || "Error al cargar precios");
         pushToast("error", "Error al cargar precios", e.message);
       } finally {
@@ -227,7 +202,7 @@ const ColectarPrecios = () => {
     if (!cargandoCache && cache) inputRef.current?.focus();
   }, [cargandoCache, cache]);
 
-  // ---------- Submit del input ----------
+  // ---------- Búsqueda y Submit ----------
   const handleSubmit = (e) => {
     e.preventDefault();
     const codigo = codigoInput.trim();
@@ -238,11 +213,14 @@ const ColectarPrecios = () => {
       return;
     }
 
-    const existente = items.find((i) => i.scanner === codigo && !i.error);
+    const existente = items.find(
+      (i) => (i.scanner === codigo || String(i.idArticulo) === codigo) && !i.error
+    );
+
     if (existente) {
       setItems((prev) =>
         prev.map((i) =>
-          i.scanner === codigo && !i.error
+          (i.scanner === codigo || String(i.idArticulo) === codigo) && !i.error
             ? { ...i, cantidad: Math.min((i.cantidad || 1) + 1, CANTIDAD_MAX) }
             : i
         )
@@ -257,7 +235,17 @@ const ColectarPrecios = () => {
       return;
     }
 
-    const prod = cache.items[codigo];
+    let prod = cache.items[codigo];
+    if (!prod && typeof cache.items === "object") {
+      const listaValores = Array.isArray(cache.items)
+        ? cache.items
+        : Object.values(cache.items);
+
+      prod = listaValores.find(
+        (p) => String(p.scanner) === codigo || String(p.idArticulo) === codigo
+      );
+    }
+
     if (!prod) {
       setItems((prev) => [
         ...prev,
@@ -453,7 +441,7 @@ const ColectarPrecios = () => {
         </div>
       </div>
 
-      {/* ---------- LISTA ---------- */}
+      {/* ---------- LISTA DE PRODUCTOS ---------- */}
       {items.length === 0 ? (
         <div className={styles.emptyState}>
           <p>Aún no escaneaste ningún código.</p>
@@ -464,7 +452,9 @@ const ColectarPrecios = () => {
           <table className={styles.table}>
             <thead className={styles.thead}>
               <tr>
-                <th className={styles.th}>Código</th>
+                <th className={styles.th}>Scanner</th>
+                {/* 🌟 NUEVA COLUMNA: IDARTICULO */}
+                <th className={styles.th}>Cod. Int</th>
                 <th className={styles.th}>Artículo</th>
                 <th className={styles.th}>Precio final</th>
                 <th className={styles.th}>Condición</th>
@@ -479,7 +469,15 @@ const ColectarPrecios = () => {
                   key={item.scanner}
                   className={`${styles.tr} ${item.error ? styles.trError : ""}`}
                 >
+                  {/* Código de Barras / Scanner */}
                   <td className={`${styles.td} ${styles.tdBold}`}>{item.scanner}</td>
+
+                  {/* 🌟 NUEVA CELDA: IDArticulo al lado de Scanner */}
+                  <td className={styles.td}>
+                    {item.error ? "-" : item.idArticulo || "-"}
+                  </td>
+
+                  {/* Descripción del Artículo */}
                   <td className={styles.td}>
                     {item.error ? (
                       <span className={styles.errorText}>❌ Código no encontrado</span>
@@ -487,6 +485,8 @@ const ColectarPrecios = () => {
                       item.articulo
                     )}
                   </td>
+
+                  {/* Precio Final */}
                   <td className={styles.td}>
                     {!item.error && (
                       <span className={styles.precioFinal}>
@@ -494,12 +494,15 @@ const ColectarPrecios = () => {
                       </span>
                     )}
                   </td>
+
+                  {/* Badge Condición */}
                   <td className={styles.td}>
                     {!item.error && item.tieneCondicion && (
                       <span className={styles.badgeCondicion}>{item.condicionTexto}</span>
                     )}
                   </td>
-                  {/* 🌟 Badge de tipo mejorado: condición / pack / normal */}
+
+                  {/* Tipo de Etiqueta */}
                   <td className={styles.td}>
                     {!item.error && (
                       (() => {
@@ -513,6 +516,8 @@ const ColectarPrecios = () => {
                       })()
                     )}
                   </td>
+
+                  {/* Controles de Cantidad */}
                   <td className={styles.td}>
                     {!item.error && (
                       <div className={styles.cantidadControl}>
@@ -543,6 +548,8 @@ const ColectarPrecios = () => {
                       </div>
                     )}
                   </td>
+
+                  {/* Botón Eliminar */}
                   <td className={styles.td}>
                     <button
                       className={styles.btnDelete}
@@ -558,12 +565,15 @@ const ColectarPrecios = () => {
         </div>
       )}
 
-      {/* ---------- SECCIÓN DE IMPRESIÓN ---------- */}
-      <div className="seccion-impresion-etiquetas">
-        {etiquetasMapeadas.map((e, i) => (
-          <Etiqueta key={i} tipo={e.tipo} datos={e.datos} />
-        ))}
-      </div>
+      {/* ---------- SECCIÓN DE IMPRESIÓN (UNIFICADA CON PORTAL AL BODY) ---------- */}
+      {createPortal(
+        <div className="seccion-impresion-portal grid-etiquetas">
+          {etiquetasMapeadas.map((e, i) => (
+            <Etiqueta key={i} tipo={e.tipo} datos={e.datos} />
+          ))}
+        </div>,
+        document.body
+      )}
 
       {/* ---------- TOASTS ---------- */}
       <div className={styles.toastContainer}>

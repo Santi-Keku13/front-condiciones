@@ -78,6 +78,7 @@ function Condiciones() {
     setPaginaActual(1);
   }, [busquedaInput, filtroEstado, listasSeleccionadas, fechaDesde, fechaHasta, tipoFiltroFecha, sucursal, pestanaActiva]);
 
+  
   // Lógica Semáforo Pestaña 1
   const obtenerEstadoVigencia = (fechaLimite) => {
     if (!fechaLimite) return { id: 'SIN_LIMITE', texto: 'Sin Límite', clase: styles.statusSinLimite };

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import Cenefa from "../cenefa/Cenefa";
 import styles from "./ColectarCenefas.module.css";
 import { ENDPOINTS } from "../../config";
@@ -6,7 +7,7 @@ import { ENDPOINTS } from "../../config";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 const CANTIDAD_MAX = 99;
 
-// ---------- helpers ----------
+// ---------- HELPERS ----------
 const formatoPrecio = (n) =>
   Number(n || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 0,
@@ -17,31 +18,25 @@ const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // 🌟 Mapea un item del JSON al formato de la cenefa
 const mapearACenefa = (item, tipoCenefa) => {
-  // 🎯 El "antes" es SIEMPRE el precio de Lista 5
-  // El backend lo expone como "precio5" (o "precio" que es igual a L5)
   const precioAntes = Number(item.precio5 ?? item.precio ?? 0);
-
-  // 🎯 El "ahora" es el precio de oferta (cascada 12/14/7/15)
   const precioAhora = Number(item.precioFinal ?? 0);
-
-  // 🎯 Solo mostramos "Antes" si hay oferta real
   const hayOferta = precioAhora > 0 && precioAntes > 0 && precioAhora < precioAntes;
 
   return {
     tipo: tipoCenefa,
     hayOferta,
     datos: {
-      descripcion: item.articulo,
+      descripcion: item.articulo || item.descripcion || "DESCRIPCIÓN NO DISPONIBLE",
       precioAntes: formatoPrecio(precioAntes),
       precioAhora: formatoPrecio(precioAhora),
-      codigo: item.idArticulo || "",
-      ean: item.scanner || "",
+      codigo: item.idArticulo || item.id || item.codigo || "",
+      ean: item.scanner || item.ean || "",
     },
   };
 };
 
 // ============================================================
-// COMPONENTE
+// COMPONENTE PRINCIPAL
 // ============================================================
 const ColectarCenefas = () => {
   const sucursalActual = useMemo(
@@ -68,7 +63,7 @@ const ColectarCenefas = () => {
 
   const inputRef = useRef(null);
 
-  // ---------- Toast ----------
+  // ---------- Toast Notifications ----------
   const pushToast = useCallback((tipo, titulo, mensaje) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, tipo, titulo, mensaje }]);
@@ -80,7 +75,7 @@ const ColectarCenefas = () => {
   const removeToast = (id) =>
     setToasts((prev) => prev.filter((t) => t.id !== id));
 
-  // ---------- Cargar JSON ----------
+  // ---------- Cargar JSON de Precios ----------
   const cargarJSON = useCallback(
     async (forzar = false) => {
       setCargandoCache(true);
@@ -137,7 +132,7 @@ const ColectarCenefas = () => {
     if (!cargandoCache && cache) inputRef.current?.focus();
   }, [cargandoCache, cache]);
 
-  // ---------- Submit del input ----------
+  // ---------- Búsqueda y Agregar Producto ----------
   const handleSubmit = (e) => {
     e.preventDefault();
     const codigo = codigoInput.trim();
@@ -148,11 +143,15 @@ const ColectarCenefas = () => {
       return;
     }
 
-    const existente = items.find((i) => i.scanner === codigo && !i.error);
+    // Verificar si ya existe en la lista de escaneados
+    const existente = items.find(
+      (i) => (i.scanner === codigo || String(i.idArticulo) === codigo) && !i.error
+    );
+
     if (existente) {
       setItems((prev) =>
         prev.map((i) =>
-          i.scanner === codigo && !i.error
+          (i.scanner === codigo || String(i.idArticulo) === codigo) && !i.error
             ? { ...i, cantidad: Math.min((i.cantidad || 1) + 1, CANTIDAD_MAX) }
             : i
         )
@@ -163,12 +162,25 @@ const ColectarCenefas = () => {
       return;
     }
 
-    const prod = cache.items[codigo];
+    // Búsqueda flexible en la estructura de items
+    let prod = cache.items[codigo];
+
+    if (!prod && typeof cache.items === "object") {
+      const listaValores = Array.isArray(cache.items)
+        ? cache.items
+        : Object.values(cache.items);
+
+      prod = listaValores.find(
+        (p) => String(p.scanner) === codigo || String(p.idArticulo) === codigo
+      );
+    }
+
     if (!prod) {
       setItems((prev) => [
         ...prev,
         {
           scanner: codigo,
+          idArticulo: "—",
           articulo: "Código no encontrado",
           error: true,
           cantidad: 1,
@@ -183,7 +195,7 @@ const ColectarCenefas = () => {
     inputRef.current?.focus();
   };
 
-  // ---------- Acciones ----------
+  // ---------- Acciones sobre la Lista ----------
   const eliminarItem = (scanner) =>
     setItems((prev) => prev.filter((i) => i.scanner !== scanner));
 
@@ -230,7 +242,7 @@ const ColectarCenefas = () => {
     window.print();
   };
 
-  // ---------- Derivados ----------
+  // ---------- Valores Derivados ----------
   const itemsValidos = useMemo(() => items.filter((i) => !i.error), [items]);
 
   const totalCenefas = useMemo(
@@ -243,7 +255,6 @@ const ColectarCenefas = () => {
     [items]
   );
 
-  // 🌟 Cada cenefa ya sabe su tipo
   const cenefasMapeadas = useMemo(() => {
     const result = [];
     itemsValidos.forEach((item) => {
@@ -310,16 +321,17 @@ const ColectarCenefas = () => {
       {/* ---------- SELECTOR DE TIPO DE CENEFA ---------- */}
       <div className={styles.tipoSelector}>
         <span className={styles.tipoLabel}>Tipo de cenefa:</span>
-        {[1, 2, 3].map((t) => (
+        {[1, 2, 3, 4].map((t) => (
           <button
             key={t}
             type="button"
             className={`${styles.tipoBtn} ${tipoCenefa === t ? styles.tipoBtnActive : ""}`}
             onClick={() => setTipoCenefa(t)}
           >
-            {t === 1 && "Tipo 1 — 99×138 (6/pág)"}
-            {t === 2 && "Tipo 2 — 99×93 (6/pág)"}
-            {t === 3 && "Tipo 3 — 198×93 (3/pág)"}
+            {t === 1 && "Tipo Oferta 1 — 99×138"}
+            {t === 2 && "Tipo Oferta 2 — 99×93"}
+            {t === 3 && "Tipo Oferta 3 — 198×93"}
+            {t === 4 && "Tipo Precio Único 4 — 198×93"}
           </button>
         ))}
       </div>
@@ -350,7 +362,7 @@ const ColectarCenefas = () => {
         </button>
       </form>
 
-      {/* ---------- CABECERA ---------- */}
+      {/* ---------- CABECERA LISTA ---------- */}
       <div className={styles.listHeader}>
         <h2 className={styles.listTitle}>
           Lista de cenefas <span className={styles.counter}>{totalCenefas}</span>
@@ -365,7 +377,7 @@ const ColectarCenefas = () => {
         </div>
       </div>
 
-      {/* ---------- LISTA ---------- */}
+      {/* ---------- TABLA DE PRODUCTOS ---------- */}
       {items.length === 0 ? (
         <div className={styles.emptyState}>
           <p>Aún no escaneaste ningún código.</p>
@@ -376,7 +388,8 @@ const ColectarCenefas = () => {
           <table className={styles.table}>
             <thead className={styles.thead}>
               <tr>
-                <th className={styles.th}>Código</th>
+                <th className={styles.th}>EAN / Escáner</th>
+                <th className={styles.th}>ID Art.</th>
                 <th className={styles.th}>Artículo</th>
                 <th className={styles.th}>Antes (L5)</th>
                 <th className={styles.th}>Ahora</th>
@@ -385,12 +398,15 @@ const ColectarCenefas = () => {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <tr
-                  key={item.scanner}
+                  key={`${item.scanner}-${index}`}
                   className={`${styles.tr} ${item.error ? styles.trError : ""}`}
                 >
                   <td className={`${styles.td} ${styles.tdBold}`}>{item.scanner}</td>
+                  <td className={styles.td} style={{ fontFamily: "monospace", color: "#555" }}>
+                    {item.idArticulo || "—"}
+                  </td>
                   <td className={styles.td}>
                     {item.error ? (
                       <span className={styles.errorText}>❌ Código no encontrado</span>
@@ -449,14 +465,17 @@ const ColectarCenefas = () => {
         </div>
       )}
 
-      {/* ---------- SECCIÓN DE IMPRESIÓN ---------- */}
-      <div className={`seccion-impresion-cenefas grid-tipo-${tipoCenefa}`}>
-        {cenefasMapeadas.map((c, i) => (
-          <Cenefa key={i} tipo={c.tipo} datos={c.datos} />
-        ))}
-      </div>
+      {/* ---------- SECCIÓN DE IMPRESIÓN (PORTAL EN BODY) ---------- */}
+      {createPortal(
+        <div className={`seccion-impresion-portal grid-tipo-${tipoCenefa}`}>
+          {cenefasMapeadas.map((c, i) => (
+            <Cenefa key={i} tipo={c.tipo} datos={c.datos} />
+          ))}
+        </div>,
+        document.body
+      )}
 
-      {/* ---------- TOASTS ---------- */}
+      {/* ---------- TOASTS NOTIFICATIONS ---------- */}
       <div className={styles.toastContainer}>
         {toasts.map((t) => (
           <div

@@ -1,9 +1,10 @@
 .container {
-  display: block !important;
-  width: 100vw !important;
+  display: block;
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   padding: 20px;
-  background-color: #ffffff; /* Fondo Blanco */
+  background-color: #ffffff;
   box-sizing: border-box;
   margin: 0;
   font-family: 'Inter', -apple-system, sans-serif;

@@ -1,3 +1,6 @@
+import React from 'react';
+import './Cenefa.css';
+
 function Cenefa({ tipo = 1, datos = {}, mostrarAntes = true }) {
   const {
     descripcion = 'DESCRIPCIÓN DEL PRODUCTO',
@@ -7,36 +10,53 @@ function Cenefa({ tipo = 1, datos = {}, mostrarAntes = true }) {
     ean = '',
   } = datos;
 
-  // 🎯 Layout especial para tipo 2
+  // 🎯 TIPO 4: 180x65mm Sin precio antes (Precio Gigante Centrado)
+  if (tipo === 4) {
+    return (
+      <div className="cenefa cenefa-tipo-4">
+        <div className="cenefa-fondo" />
+        <div className="cenefa-caja">
+          <div className="cenefa-descripcion">{descripcion}</div>
+
+          <div className="cenefa-codigos-t4">
+            <span><strong>Cod.</strong> {codigo}</span>
+            <span><strong>EAN:</strong> {ean}</span>
+          </div>
+
+          <div className="cenefa-precio-centrado">
+            <span className="cenefa-ahora-gigante">
+              ${precioAhora}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🎯 TIPO 2: Layout compacto
   if (tipo === 2) {
     return (
       <div className="cenefa cenefa-tipo-2">
         <div className="cenefa-fondo" />
-
         <div className="cenefa-caja-t2">
-          {/* Bloque superior: descripción + precios, centrado */}
           <div className="cenefa-t2-top">
             <div className="cenefa-descripcion-t2">{descripcion}</div>
-
             <div className="cenefa-precios-t2">
               {mostrarAntes && precioAntes && (
                 <span className="cenefa-antes-t2">
-                  Antes: <s>${precioAntes}</s>
+                  <s>${precioAntes}</s>
                 </span>
               )}
               <span className="cenefa-ahora-t2">
-                Ahora: <strong>${precioAhora}</strong>
+                <strong>${precioAhora}</strong>
               </span>
             </div>
           </div>
-
-          {/* Bloque inferior: códigos alineados abajo */}
           <div className="cenefa-codigos-t2">
             <span><strong>Cod.</strong> {codigo}</span>
             <span><strong>EAN:</strong> {ean}</span>
           </div>
         </div>
-
         <div className="cenefa-oferta-t2">
           <span>OFERTA</span>
         </div>
@@ -44,30 +64,27 @@ function Cenefa({ tipo = 1, datos = {}, mostrarAntes = true }) {
     );
   }
 
-  // 🎯 Resto de tipos (1 y 3) siguen igual
+  // 🎯 TIPOS 1 Y 3
   return (
     <div className={`cenefa cenefa-tipo-${tipo}`}>
       <div className="cenefa-fondo" />
       <div className="cenefa-caja">
         <div className="cenefa-descripcion">{descripcion}</div>
-
         <div className="cenefa-precios">
           {mostrarAntes && precioAntes && (
             <span className="cenefa-antes">
-              Antes: <s>${precioAntes}</s> /
+              <s>${precioAntes}</s> /
             </span>
           )}
           <span className="cenefa-ahora">
-            Ahora: <strong>${precioAhora}</strong>
+            <strong>${precioAhora}</strong>
           </span>
         </div>
-
         <div className="cenefa-codigos">
           <span><strong>Cod.</strong> {codigo}</span>
           <span><strong>EAN:</strong> {ean}</span>
         </div>
       </div>
-
       <div className="cenefa-oferta">
         <span>OFERTA</span>
       </div>
