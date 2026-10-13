@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import styles from '../condiciones/Condiciones.module.css';
 import * as XLSX from 'xlsx';
 import Etiqueta from '../etiqueta/Etiqueta';
@@ -388,69 +389,61 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
         </div>
       )}
 
-      {/* ===== CONTENEDOR OCULTO DE ETIQUETAS PARA IMPRESIÓN ===== */}
-      <div className="seccion-impresion-etiquetas">
-        {datosFiltradosYPagina.todosFiltrados.map((item, index) => {
-          // 1. En Cambios de Precios, PrecioVentaTotal ES el PRECIO LISTA BASE ($249,00)
-          const precioListaBase = Number(item.PrecioVentaTotal) || 0;
-          
-          const esUnidad = Number(item.IDPresentacion) === 1;
-          const tipoEtiquetaCalculado = esUnidad ? 'NORMAL' : 'PACK';
+      {/* ===== CONTENEDOR PORTAL DE ETIQUETAS PARA IMPRESIÓN ===== */}
+      {createPortal(
+        <div className="seccion-impresion-portal grid-etiquetas">
+          {datosFiltradosYPagina.todosFiltrados.map((item, index) => {
+            const precioListaBase = Number(item.PrecioVentaTotal) || 0;
+            
+            const esUnidad = Number(item.IDPresentacion) === 1;
+            const tipoEtiquetaCalculado = esUnidad ? 'NORMAL' : 'PACK';
 
-          const idBuscar = String(item.IDArticulo).trim();
-          const condicionAsociada = mapaCondiciones.get(idBuscar);
+            const idBuscar = String(item.IDArticulo).trim();
+            const condicionAsociada = mapaCondiciones.get(idBuscar);
 
-          // Obtener el porcentaje de descuento o el precio final de la condición
-          const porcentajeDescuento = Number(condicionAsociada?.PorDescRec) || 0;
-          const tieneCondicion = !!condicionAsociada && (porcentajeDescuento > 0 || condicionAsociada.PrecioFinal !== undefined);
+            const porcentajeDescuento = Number(condicionAsociada?.PorDescRec) || 0;
+            const tieneCondicion = !!condicionAsociada && (porcentajeDescuento > 0 || condicionAsociada.PrecioFinal !== undefined);
 
-          // 2. Calcular Precio con Descuento ($212,00)
-          let precioConDescuento = 0;
-          if (tieneCondicion) {
-            if (condicionAsociada.PrecioFinal !== undefined && condicionAsociada.PrecioFinal !== null) {
-              precioConDescuento = Number(condicionAsociada.PrecioFinal);
-            } else {
-              precioConDescuento = precioListaBase * (1 - (porcentajeDescuento / 100));
+            let precioConDescuento = 0;
+            if (tieneCondicion) {
+              if (condicionAsociada.PrecioFinal !== undefined && condicionAsociada.PrecioFinal !== null) {
+                precioConDescuento = Number(condicionAsociada.PrecioFinal);
+              } else {
+                precioConDescuento = precioListaBase * (1 - (porcentajeDescuento / 100));
+              }
             }
-          }
 
-          // 3. Precio Sin IVA del Precio Lista Base
-          const precioSinIvaCalculado = precioListaBase / 1.21;
+            const precioSinIvaCalculado = precioListaBase / 1.21;
 
-          const datosMapeados = {
-            descripcion: item.Descripcion || 'SIN DESCRIPCIÓN',
-            fecha: item.FechaPrecio ? formatearFecha(item.FechaPrecio) : new Date().toLocaleDateString('es-AR'),
-            codigoInterno: item.IDArticulo || '—',
-            codigoBarras: item.Scanner || item.IDArticulo || '—',
-            scanner: item.Scanner || '—',
-            
-            // DERECHA: Precio Lista Base ($249,00)
-            precioUnitario: precioListaBase.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            
-            // DERECHA: Precio Sin IVA ($205,79)
-            precioSinImpuesto: precioSinIvaCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            
-            // ETIQUETA PACK
-            CantUni: item.CantUni || 1,
-
-            // IZQUIERDA: Precio con Descuento ($212,00)
-            precioCantidad: tieneCondicion 
-              ? precioConDescuento.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-              : '',
+            const datosMapeados = {
+              descripcion: item.Descripcion || 'SIN DESCRIPCIÓN',
+              fecha: item.FechaPrecio ? formatearFecha(item.FechaPrecio) : new Date().toLocaleDateString('es-AR'),
+              codigoInterno: item.IDArticulo || '—',
+              codigoBarras: item.Scanner || item.IDArticulo || '—',
+              scanner: item.Scanner || '—',
               
-            // IZQUIERDA: Compra mínima
-            compraMinima: tieneCondicion ? (condicionAsociada.Desde || '') : ''
-          };
+              precioUnitario: precioListaBase.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              precioSinImpuesto: precioSinIvaCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              CantUni: item.CantUni || 1,
 
-          return (
-            <Etiqueta 
-              key={index} 
-              tipo={tipoEtiquetaCalculado} 
-              datos={datosMapeados} 
-            />
-          );
-        })}
-      </div>
+              precioCantidad: tieneCondicion 
+                ? precioConDescuento.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                : '',
+                
+              compraMinima: tieneCondicion ? (condicionAsociada.Desde || '') : ''
+            };
+
+            return (
+              <Etiqueta 
+                key={index} 
+                tipo={tipoEtiquetaCalculado} 
+                datos={datosMapeados} 
+              />
+            );
+          })}
+        </div>,
+        document.body
+      )}
     </>
   );
 }
