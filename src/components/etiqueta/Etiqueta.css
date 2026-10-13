@@ -246,19 +246,37 @@
 
 
 /* ====================================================
-   DISTRIBUCIÓN DE IMPRESIÓN PARA ETIQUETAS DE GÓNDOLA
+   REGLAS DE IMPRESIÓN RIGIDAS (2 COL x 7 FILAS = 14 / PÁG)
    ==================================================== */
 @media print {
   .seccion-impresion-portal.grid-etiquetas {
-    display: none;
+    display: grid !important;
+    /* 🌟 2 columnas fijas de 97mm */
     grid-template-columns: repeat(2, 97mm) !important;
+    /* 🌟 7 filas fijas de 35mm */
+    grid-auto-rows: 35mm !important;
     gap: 3mm 4mm !important;
-    padding: 5mm !important;
+    padding: 6mm 5mm !important;
+    justify-content: center !important;
+    align-content: start !important;
     background: #ffffff !important;
+    box-sizing: border-box !important;
   }
 
   .etiqueta-container {
+    width: 97mm !important;
+    height: 35mm !important;
+    max-width: 97mm !important;
+    max-height: 35mm !important;
+    box-sizing: border-box !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    overflow: hidden !important;
+  }
+
+  /* 🌟 Salto de página estricto cada 14 etiquetas */
+  .seccion-impresion-portal.grid-etiquetas > .etiqueta-container:nth-child(14n) {
+    page-break-after: always !important;
+    break-after: page !important;
   }
 }

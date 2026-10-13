@@ -364,17 +364,18 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 2mm 8mm;
+  padding: 4mm 8mm 2mm 8mm; /* 🌟 Un poco más de padding superior para bajar la descripción */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;   /* 🌟 Agrupa todo hacia el centro pegado al precio */
   align-items: center;
   text-align: center;
+  gap: 2mm;                  /* 🌟 Distancia estrecha y controlada entre elementos */
 }
 
 .cenefa-tipo-3 .cenefa-descripcion {
-  font-size: 26px;
+  font-size: 22px;           /* 🌟 Tamaño ajustado para evitar que ocupe demasiado alto */
   font-weight: 900;
   text-transform: uppercase;
   line-height: 1.05;
@@ -399,7 +400,7 @@
 }
 
 .cenefa-tipo-3 .cenefa-antes {
-  font-size: 22px;
+  font-size: 20px;
   color: #444;
 }
 
@@ -409,7 +410,7 @@
 }
 
 .cenefa-tipo-3 .cenefa-ahora {
-  font-size: 48px;
+  font-size: 80px;
   font-weight: 900;
   color: #000;
   line-height: 1;
@@ -420,14 +421,14 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #000;
   font-family: 'Courier New', monospace;
   flex-wrap: wrap;
   border-top: 1.5px solid rgba(0, 0, 0, 0.15);
-  padding-top: 1.5mm;
-  width: 100%;
+  padding-top: 1mm;
+  width: 90%;                /* 🌟 Contenido de códigos más centrado */
 }
 
 .cenefa-tipo-3 .cenefa-fondo,
@@ -455,17 +456,18 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 2mm 8mm;
+  padding: 4mm 8mm 2mm 8mm; /* 🌟 Baja la descripción ligeramente */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;   /* 🌟 Junta todo hacia el número central */
   align-items: center;
   text-align: center;
+  gap: 1.5mm;                /* 🌟 Elementos agrupados pegados al precio */
 }
 
 .cenefa-tipo-4 .cenefa-descripcion {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 900;
   text-transform: uppercase;
   line-height: 1.05;
@@ -481,25 +483,25 @@
 .cenefa-tipo-4 .cenefa-codigos-t4 {
   display: flex;
   justify-content: space-between;
-  width: 100%;
-  font-size: 12px;
+  width: 90%;
+  font-size: 11px;
   font-weight: 700;
   color: #000;
   font-family: 'Courier New', monospace;
   border-bottom: 1.5px solid rgba(0, 0, 0, 0.2);
-  padding-bottom: 1mm;
-  margin-top: 0.5mm;
+  padding-bottom: 0.8mm;
+  margin-top: 0;
 }
 
 .cenefa-tipo-4 .cenefa-precio-centrado {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  flex: none;
 }
 
 .cenefa-tipo-4 .cenefa-ahora-gigante {
-  font-size: 58px;
+  font-size: 90px;           /* 🌟 Ligera reducción para dar espacio suficiente a la descripción */
   font-weight: 900;
   color: #000;
   line-height: 1;
@@ -539,35 +541,36 @@
     background: #ffffff !important;
   }
 
-  /* ---------- TIPOS 3 Y 4: CALIBRACIÓN FÍSICA HOJA A4 PREIMPRESA ---------- */
+ /* ---------- TIPOS 3 Y 4: CALIBRACIÓN FÍSICA ESTRICTA HOJA A4 ---------- */
   .seccion-impresion-portal.grid-tipo-3,
   .seccion-impresion-portal.grid-tipo-4 {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    padding-top: 22mm !important; 
+    padding-top: 25mm !important;    /* Margen superior exacto de 25mm */
+    padding-bottom: 0 !important;    /* Cero padding inferior para dar aire */
+    height: 297mm !important;        /* Forzar alto de hoja A4 exacto */
+    max-height: 297mm !important;
+    box-sizing: border-box !important;
     background: transparent !important;
+    overflow: hidden !important;
   }
 
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3,
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4 {
     width: 180mm !important;
     height: 65mm !important;
-    margin-bottom: 16mm !important; 
+    margin-bottom: 33mm !important;  /* Ajustado a 33mm para prevenir desborde físico por bordes */
     flex-shrink: 0 !important;
+    box-sizing: border-box !important;
   }
 
-  /* Salto de página cada 3 cenefas */
+  /* La 3ra cenefa cancela el margen inferior y fuerza el salto de página */
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n),
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n) {
     margin-bottom: 0 !important;
-    page-break-after: always;
-    break-after: page;
-  }
-
-  .cenefa {
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-after: always !important;
+    break-after: page !important;
   }
 }
