@@ -12,8 +12,8 @@ function App() {
       
       {/* --- ENCABEZADO CORPORATIVO GENERAL --- */}
       <header className="mainHeader">
-        <h1 className="mainTitle">BLOW MAX</h1>
-        <h2 className="mainSubtitle">Tu mayorista</h2>
+        <h1 className="mainTitle">blowMax</h1>
+        <h2 className="mainSubtitle">TU MAYORISTA</h2>
       </header>
 
       {/* --- RENDER DINÁMICO SEGÚN AUTENTICACIÓN --- */}

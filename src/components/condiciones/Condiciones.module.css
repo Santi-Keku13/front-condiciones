@@ -10,6 +10,12 @@
   font-family: 'Inter', -apple-system, sans-serif;
 }
 
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+}
+
 .title {
   /* Tipografía redondeada para títulos */
   font-family: 'Quicksand', sans-serif;
@@ -22,7 +28,76 @@
   display: inline-block;
 }
 
-/* --- PANEL DE FILTROS --- */
+@media (max-width: 768px) {
+  .title {
+    font-size: 1.6rem;
+    margin-bottom: 15px;
+  }
+}
+
+/* --- CONTENEDOR DE PESTAÑAS RESPONSIVO --- */
+.tabsContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 20px; /* Espacio entre pestañas */
+  margin-bottom: 25px;
+  border-bottom: 2px solid #e2e8f0; /* Línea gris sutil de fondo */
+  width: 100%;
+  padding-left: 5px;
+  box-sizing: border-box;
+  overflow-x: auto; /* 🌟 Permite scroll horizontal táctil si las pestañas no entran */
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+
+/* Ocultar barra de scroll estética */
+.tabsContainer::-webkit-scrollbar {
+  height: 4px;
+}
+.tabsContainer::-webkit-scrollbar-thumb {
+  background: #fca5a5;
+  border-radius: 4px;
+}
+
+.tabLink {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.2rem; /* Tamaño optimizado */
+  font-weight: 700;
+  color: #64748b; /* Gris apagado para las pestañas inactivas */
+  background: none !important;
+  border: none !important;
+  padding: 0 0 12px 0; /* Espacio antes de la línea */
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  flex-shrink: 0; /* 🌟 Evita que las pestañas se aplasten */
+  text-align: center;
+}
+
+.tabLink:hover {
+  color: #C41E3A; /* Se pone rojo sutil al pasar el mouse */
+}
+
+/* Estado Activo: Aplica el color rojo corporativo y la línea inferior */
+.tabLinkActive {
+  color: #C41E3A !important;
+  border-bottom: 3px solid #C41E3A !important; /* Línea roja idéntica a tu título */
+  margin-bottom: -2px; /* Hace que se encime sobre la línea gris de fondo perfectamente */
+}
+
+@media (max-width: 768px) {
+  .tabsContainer {
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+  .tabLink {
+    font-size: 0.95rem; /* Ajuste para lectura clara en celulares */
+    padding-bottom: 8px;
+  }
+}
+
+/* --- PANEL DE FILTROS RESPONSIVO --- */
 .filterPanel {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -33,12 +108,22 @@
   border-radius: 12px;
   border: 1px solid #fee2e2;
   align-items: flex-end;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .filterPanel {
+    grid-template-columns: 1fr; /* 🌟 En celulares, los campos se apilan a 1 sola columna */
+    padding: 12px;
+    gap: 12px;
+  }
 }
 
 .filterGroup {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
 }
 
 .filterLabel {
@@ -66,19 +151,22 @@
   outline: none;
 }
 
-/* --- TABLA --- */
+/* --- TABLA RESPONSIVA --- */
 .tableContainer {
   width: 100%;
-  overflow-x: auto;
+  max-width: 100%;
+  overflow-x: auto; /* 🌟 Permite scroll horizontal fluido en móviles sin ensanchar la pantalla */
+  -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid #fee2e2;
   background-color: #ffffff;
+  box-sizing: border-box;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1000px;
+  min-width: 800px; /* Ancho seguro para mantener las columnas legibles */
 }
 
 .thead {
@@ -93,6 +181,7 @@
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .tr {
@@ -123,6 +212,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .statusVencido { background-color: #C41E3A; color: white; } /* Rojo sólido */
@@ -130,14 +220,15 @@
 .statusVigente { background-color: #dcfce7; color: #166534; }
 .statusSinLimite { background-color: #f1f5f9; color: #475569; }
 
-/* --- PAGINACIÓN --- */
+/* --- PAGINACIÓN RESPONSIVA --- */
 .paginationContainer {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
   margin-top: 25px;
   padding-bottom: 40px;
+  flex-wrap: wrap;
 }
 
 .pageButton {
@@ -162,41 +253,15 @@
   cursor: not-allowed;
 }
 
-/* --- MODAL --- */
-.modalHeader {
-  background-color: #C41E3A;
-  color: #ffffff;
-  padding: 20px;
-  font-family: 'Quicksand', sans-serif;
-}
-
-.modalPrecioDestacado {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #C41E3A;
-}
-
-.badgePlu {
-  background-color: #fee2e2;
-  color: #C41E3A;
-  padding: 3px 8px;
-  border-radius: 5px;
-  font-family: monospace;
-  font-weight: bold;
-}
-
-/* ==========================================================================
-   ESTILOS ESTRUCTURALES DEL MODAL (RECUPERADOS Y OPTIMIZADOS)
-   ========================================================================== */
-
+/* --- MODAL STRUCTURAL --- */
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.6); /* Fondo oscuro semitransparente */
-  backdrop-filter: blur(4px);               /* Efecto de desenfoque premium */
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -266,7 +331,7 @@
 
 .modalBlockFull {
   grid-column: span 2;
-  background-color: #fff5f5; /* Fondo rojo ultra suave */
+  background-color: #fff5f5;
   padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid #fee2e2;
@@ -282,7 +347,7 @@
 .modalBlockLabel {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #991b1b; /* Texto de etiquetas en rojo oscuro */
+  color: #991b1b;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -296,61 +361,33 @@
 .modalPrecioDestacado {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #C41E3A; /* Precio destacado en Rojo Blow Max */
+  color: #C41E3A;
 }
 
-/* Animación de entrada suave */
+.badgePlu {
+  background-color: #fee2e2;
+  color: #C41E3A;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-weight: bold;
+}
+
 @keyframes slideUp {
   from { transform: translateY(15px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Adaptación para pantallas chicas de celular */
 @media (max-width: 480px) {
   .modalGrid {
     grid-template-columns: 1fr;
   }
   .modalBlock {
-    grid-column: span 2;
+    grid-column: span 1;
   }
 }
 
-/* --- CONTENEDOR DE PESTAÑAS ESTILO TEXTO SUBRAYADO --- */
-.tabsContainer {
-  display: flex;
-  gap: 30px; /* Espacio entre pestañas */
-  margin-bottom: 25px;
-  border-bottom: 2px solid #e2e8f0; /* Línea gris sutil de fondo */
-  width: 100%;
-  padding-left: 10px;
-}
-
-.tabLink {
-  font-family: 'Quicksand', sans-serif;
-  font-size: 1.4rem; /* Tamaño intermedio y ejecutivo */
-  font-weight: 700;
-  color: #64748b; /* Gris apagado para las pestañas inactivas */
-  background: none !important;
-  border: none !important;
-  padding: 0 0 12px 0; /* Espacio antes de la línea */
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s ease-in-out;
-  outline: none;
-}
-
-.tabLink:hover {
-  color: #C41E3A; /* Se pone rojo sutil al pasar el mouse */
-}
-
-/* Estado Activo: Aplica el color rojo corporativo y la línea inferior idéntica a la imagen */
-.tabLinkActive {
-  color: #C41E3A !important;
-  border-bottom: 3px solid #C41E3A !important; /* Línea roja idéntica a tu título */
-  margin-bottom: -2px; /* Hace que se encime sobre la línea gris de fondo perfectamente */
-}
-
-/* --- CARTELES / TOAST NOTIFICATIONS PROFESIONALES --- */
+/* --- TOAST NOTIFICATIONS --- */
 .toastContainer {
   position: fixed;
   bottom: 24px;
@@ -362,9 +399,17 @@
   pointer-events: none;
 }
 
+@media (max-width: 480px) {
+  .toastContainer {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+  }
+}
+
 .toast {
   pointer-events: auto;
-  min-width: 300px;
+  min-width: 280px;
   max-width: 450px;
   padding: 16px 20px;
   border-radius: 8px;
@@ -374,26 +419,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-left: 5px solid #64748b; /* color por defecto */
+  border-left: 5px solid #64748b;
   animation: slideIn 0.3s ease-out forwards;
   font-family: inherit;
 }
 
-.toastSuccess {
-  border-left-color: #16a34a; /* Verde Blow Max */
-}
-
-.toastError {
-  border-left-color: #C41E3A; /* Rojo Blow Max */
-}
-
-.toastWarning {
-  border-left-color: #d97706; /* Amarillo/Naranja */
-}
-
-.toastInfo {
-  border-left-color: #3b82f6; /* Azul */
-}
+.toastSuccess { border-left-color: #16a34a; }
+.toastError { border-left-color: #C41E3A; }
+.toastWarning { border-left-color: #d97706; }
+.toastInfo { border-left-color: #3b82f6; }
 
 .toastContent {
   display: flex;
