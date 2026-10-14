@@ -375,7 +375,7 @@
 }
 
 .cenefa-tipo-3 .cenefa-descripcion {
-  font-size: 22px;           /* 🌟 Tamaño ajustado para evitar que ocupe demasiado alto */
+  font-size: 25px;           /* 🌟 Tamaño ajustado para evitar que ocupe demasiado alto */
   font-weight: 900;
   text-transform: uppercase;
   line-height: 1.05;
@@ -400,7 +400,7 @@
 }
 
 .cenefa-tipo-3 .cenefa-antes {
-  font-size: 20px;
+  font-size: 22px;
   color: #444;
 }
 
@@ -410,7 +410,7 @@
 }
 
 .cenefa-tipo-3 .cenefa-ahora {
-  font-size: 80px;
+  font-size: 85px;
   font-weight: 900;
   color: #000;
   line-height: 1;
@@ -421,7 +421,7 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 700;
   color: #000;
   font-family: 'Courier New', monospace;
@@ -484,7 +484,7 @@
   display: flex;
   justify-content: space-between;
   width: 90%;
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 700;
   color: #000;
   font-family: 'Courier New', monospace;
@@ -501,7 +501,7 @@
 }
 
 .cenefa-tipo-4 .cenefa-ahora-gigante {
-  font-size: 90px;           /* 🌟 Ligera reducción para dar espacio suficiente a la descripción */
+  font-size: 95px;           /* 🌟 Ligera reducción para dar espacio suficiente a la descripción */
   font-weight: 900;
   color: #000;
   line-height: 1;
@@ -541,32 +541,41 @@
     background: #ffffff !important;
   }
 
- /* ---------- TIPOS 3 Y 4: CALIBRACIÓN FÍSICA ESTRICTA HOJA A4 ---------- */
+ /* ---------- TIPOS 3 Y 4: CONTROL DIRECTO DE MARGEN SUPERIOR ---------- */
+  @page {
+    size: A4 portrait;
+    margin: 0 !important; /* 🌟 Liberamos el control de la página al CSS */
+  }
+
   .seccion-impresion-portal.grid-tipo-3,
   .seccion-impresion-portal.grid-tipo-4 {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    padding-top: 25mm !important;    /* Margen superior exacto de 25mm */
-    padding-bottom: 0 !important;    /* Cero padding inferior para dar aire */
-    height: 297mm !important;        /* Forzar alto de hoja A4 exacto */
-    max-height: 297mm !important;
-    box-sizing: border-box !important;
+    display: block !important;
+    width: 210mm !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
     background: transparent !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3,
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4 {
     width: 180mm !important;
     height: 65mm !important;
-    margin-bottom: 33mm !important;  /* Ajustado a 33mm para prevenir desborde físico por bordes */
-    flex-shrink: 0 !important;
+    margin: 0 auto 34mm auto !important; /* Separación entre la 1ª/2ª y 2ª/3ª */
     box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  /* La 3ra cenefa cancela el margen inferior y fuerza el salto de página */
+  /* 🌟 AQUÍ CAMBIAS EL TOPE SUPERIOR DE TODAS LAS HOJAS:
+     Afecta a la cenefa #1 (hoja 1), cenefa #4 (hoja 2), cenefa #7 (hoja 3), etc. */
+  .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n+1),
+  .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n+1) {
+    margin-top: 20mm !important; /* 👈 MODIFICA ESTE VALOR PARA SUBIR O BAJAR (ej: 18mm, 22mm, 25mm) */
+  }
+
+  /* La 3ª cenefa de cada hoja cancela el margen inferior y fuerza el salto */
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n),
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n) {
     margin-bottom: 0 !important;
