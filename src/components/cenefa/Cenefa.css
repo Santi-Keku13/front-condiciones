@@ -544,7 +544,7 @@
  /* ---------- TIPOS 3 Y 4: CONTROL DIRECTO DE MARGEN SUPERIOR ---------- */
   @page {
     size: A4 portrait;
-    margin: 0 !important; /* 🌟 Liberamos el control de la página al CSS */
+    margin: 0 !important; /* Liberamos el control de la página al CSS */
   }
 
   .seccion-impresion-portal.grid-tipo-3,
@@ -562,22 +562,28 @@
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4 {
     width: 180mm !important;
     height: 65mm !important;
-    margin: 0 auto 34mm auto !important; /* Separación entre la 1ª/2ª y 2ª/3ª */
+    margin: 0 auto !important;
     box-sizing: border-box !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  /* 🌟 AQUÍ CAMBIAS EL TOPE SUPERIOR DE TODAS LAS HOJAS:
-     Afecta a la cenefa #1 (hoja 1), cenefa #4 (hoja 2), cenefa #7 (hoja 3), etc. */
+  /* 🌟 PRIMERA CENEFA DE CADA HOJA (#1, #4, #7...) */
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n+1),
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n+1) {
-    margin-top: 20mm !important; /* 👈 MODIFICA ESTE VALOR PARA SUBIR O BAJAR (ej: 18mm, 22mm, 25mm) */
+    margin-top: 20mm !important; /* Posición del primer precio */
   }
 
-  /* La 3ª cenefa de cada hoja cancela el margen inferior y fuerza el salto */
+  /* 🌟 SEGUNDA CENEFA DE CADA HOJA (#2, #5, #8...): +5 mm de separación */
+  .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n+2),
+  .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n+2) {
+    margin-top: 39mm !important; /* 34mm (base) + 5mm = 39mm */
+  }
+
+  /* 🌟 TERCERA CENEFA DE CADA HOJA (#3, #6, #9...): +10 mm de separación */
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n),
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n) {
+    margin-top: 44mm !important; /* 34mm (base) + 10mm = 44mm */
     margin-bottom: 0 !important;
     page-break-after: always !important;
     break-after: page !important;
