@@ -4,7 +4,22 @@ import styles from '../condiciones/Condiciones.module.css';
 import * as XLSX from 'xlsx';
 import Etiqueta from '../etiqueta/Etiqueta';
 
-function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, onOpenModal }) {
+// 🎯 TABLA DE PRIORIDADES DE LISTAS SEGÚN SUCURSAL
+const PRIORIDADES_SUCURSAL = {
+  ACCESO: [14, 12, 5],
+  ALAMEDA: [12, 5],
+  BASTILLA: [7, 12, 5],
+  ALBERDI: [15, 12, 5]
+};
+
+function CambiosPrecios({ 
+  datosPrecios = [], 
+  datosCondiciones = [], 
+  cargando, 
+  error, 
+  onOpenModal,
+  sucursalActual = 'ACCESO' // 🏢 Recibe la sucursal activa ('ACCESO', 'ALAMEDA', 'BASTILLA', 'ALBERDI')
+}) {
   const [busquedaPrecios, setBusquedaPrecios] = useState('');
   const [fechaFiltroPrecio, setFechaFiltroPrecio] = useState(new Date().toISOString().substring(0, 10));
   
@@ -23,7 +38,7 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
 
   useEffect(() => {
     setPaginaActual(1);
-  }, [busquedaPrecios, fechaFiltroPrecio, listasSeleccionadas, filtroDepto, filtroFamilia, filtroSubFamilia]);
+  }, [busquedaPrecios, fechaFiltroPrecio, listasSeleccionadas, filtroDepto, filtroFamilia, filtroSubFamilia, sucursalActual]);
 
   // Cierra el menú desplegable si se hace clic fuera de él
   useEffect(() => {
@@ -72,7 +87,6 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
     };
   }, [datosPrecios]);
 
-  // HANDLER PARA MANEJAR MARCAR / DESMARCAR LISTAS
   const handleToggleLista = (listaValue) => {
     const strValue = listaValue.toString();
     setListasSeleccionadas(prev => 
@@ -86,19 +100,22 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
     setListasSeleccionadas([]);
   };
 
-  // --- FILTRADO DE TABLA ---
+  // --- FILTRADO DE TABLA CON JERARQUÍA DE LISTAS POR SUCURSAL ---
   const datosFiltradosYPagina = useMemo(() => {
     let res = [...datosPrecios];
     const termino = busquedaPrecios.toLowerCase().trim();
 
+    // 1. Filtro por Fecha
     if (fechaFiltroPrecio) {
       res = res.filter(i => i.FechaPrecio && i.FechaPrecio.substring(0, 10) === fechaFiltroPrecio);
     }
-    
+
+    // 2. Filtro por Listas seleccionadas en el dropdown (si hay alguna tildada)
     if (listasSeleccionadas.length > 0) {
       res = res.filter(i => i.Lista && listasSeleccionadas.includes(i.Lista.toString()));
     }
 
+    // 3. Filtros de Estructura Comercial
     if (filtroDepto !== 'TODOS') {
       res = res.filter(i => i.Departamento === filtroDepto);
     }
@@ -108,6 +125,8 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
     if (filtroSubFamilia !== 'TODOS') {
       res = res.filter(i => i.SubFamilia === filtroSubFamilia);
     }
+
+    // 4. Búsqueda por texto
     if (termino) {
       res = res.filter(i => 
         i.IDArticulo?.toString().includes(termino) || 
@@ -116,11 +135,49 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
       );
     }
 
-    const total = res.length;
-    const paginados = res.slice((paginaActual - 1) * filasPorPagina, paginaActual * filasPorPagina);
+    // 🌟 5. APLICACIÓN DE JERARQUÍA Y DEDUPLICACIÓN POR PRODUCTO SEGÚN SUCURSAL
+    const ordenPrioridades = PRIORIDADES_SUCURSAL[sucursalActual.toUpperCase()] || [14, 12, 5];
+    const productosAgrupados = new Map();
+
+    res.forEach(item => {
+      const idArticulo = String(item.IDArticulo).trim();
+      const listaActual = Number(item.Lista);
+
+      if (!productosAgrupados.has(idArticulo)) {
+        productosAgrupados.set(idArticulo, item);
+      } else {
+        const itemExistente = productosAgrupados.get(idArticulo);
+        const listaExistente = Number(itemExistente.Lista);
+
+        const prioridadActual = ordenPrioridades.indexOf(listaActual);
+        const prioridadExistente = ordenPrioridades.indexOf(listaExistente);
+
+        // Si la lista actual está definida en las prioridades y es superior a la existente:
+        if (prioridadActual !== -1) {
+          if (prioridadExistente === -1 || prioridadActual < prioridadExistente) {
+            productosAgrupados.set(idArticulo, item);
+          }
+        }
+      }
+    });
+
+    const resDeduplicado = Array.from(productosAgrupados.values());
+
+    const total = resDeduplicado.length;
+    const paginados = resDeduplicado.slice((paginaActual - 1) * filasPorPagina, paginaActual * filasPorPagina);
     
-    return { total, paginados, todosFiltrados: res };
-  }, [datosPrecios, busquedaPrecios, fechaFiltroPrecio, listasSeleccionadas, filtroDepto, filtroFamilia, filtroSubFamilia, paginaActual]);
+    return { total, paginados, todosFiltrados: resDeduplicado };
+  }, [
+    datosPrecios, 
+    busquedaPrecios, 
+    fechaFiltroPrecio, 
+    listasSeleccionadas, 
+    filtroDepto, 
+    filtroFamilia, 
+    filtroSubFamilia, 
+    paginaActual, 
+    sucursalActual
+  ]);
 
   const totalPaginas = Math.ceil(datosFiltradosYPagina.total / filasPorPagina);
 
@@ -150,7 +207,7 @@ function CambiosPrecios({ datosPrecios, datosCondiciones = [], cargando, error, 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Cambios de Precios");
 
     const fechaNombre = fechaFiltroPrecio || new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(workbook, `Cambios_de_Precios_BlowMax_${fechaNombre}.xlsx`);
+    XLSX.writeFile(workbook, `Cambios_de_Precios_${sucursalActual}_${fechaNombre}.xlsx`);
   };
 
   const exportarAPDF = () => {
