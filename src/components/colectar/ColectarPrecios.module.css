@@ -732,3 +732,56 @@
 .cantidadInput:focus {
   background-color: #fff5f5;
 }
+
+/* =========================================================
+   REGLAS EXCLUSIVAS DE IMPRESIÓN (12 ETIQUETAS POR HOJA A4)
+   ========================================================= */
+@media print {
+  /* Oculta la interfaz del colector al mandar a imprimir */
+  .container,
+  .toastContainer,
+  .modalOverlay {
+    display: none !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0 !important; /* Invalida márgenes del sistema de impresión del cliente */
+  }
+
+  :global(body) {
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: #ffffff !important;
+  }
+
+  :global(.seccion-impresion-portal) {
+    display: block !important;
+  }
+
+  /* Define la hoja A4 física con un tope fijo para evitar recortes en la parte superior */
+  :global(.hoja-a4) {
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    box-sizing: border-box !important;
+    padding-top: 15mm !important;  /* 🌟 Garantiza la distancia superior en todas las hojas */
+    padding-bottom: 5mm !important;
+    padding-left: 5mm !important;
+    padding-right: 5mm !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    overflow: hidden !important;
+  }
+
+  /* Grilla de 2 columnas x 6 filas (12 etiquetas) */
+  :global(.grid-etiquetas) {
+    display: grid !important;
+    grid-template-columns: repeat(2, 97mm) !important;
+    grid-auto-rows: 43mm !important; /* 🌟 Alto configurado a 43mm */
+    gap: 2mm 4mm !important;
+    justify-content: center !important;
+    align-content: start !important;
+    box-sizing: border-box !important;
+  }
+}

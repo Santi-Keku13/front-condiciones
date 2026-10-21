@@ -6,7 +6,7 @@ import Etiqueta from '../etiqueta/Etiqueta';
 
 // 🎯 TABLA DE PRIORIDADES DE LISTAS SEGÚN SUCURSAL
 const PRIORIDADES_SUCURSAL = {
-  ACCESO: [14, 12, 5],
+  ACCESO: [14, 12, 8, 5],
   ALAMEDA: [12, 5],
   BASTILLA: [7, 12, 5],
   ALBERDI: [15, 12, 5]
@@ -446,58 +446,75 @@ function CambiosPrecios({
         </div>
       )}
 
-      {/* ===== CONTENEDOR PORTAL DE ETIQUETAS PARA IMPRESIÓN ===== */}
+      {/* ===== CONTENEDOR PORTAL DE ETIQUETAS PARA IMPRESIÓN (AGRUPADO DE A 12) ===== */}
       {createPortal(
-        <div className="seccion-impresion-portal grid-etiquetas">
-          {datosFiltradosYPagina.todosFiltrados.map((item, index) => {
-            const precioListaBase = Number(item.PrecioVentaTotal) || 0;
-            
-            const esUnidad = Number(item.IDPresentacion) === 1;
-            const tipoEtiquetaCalculado = esUnidad ? 'NORMAL' : 'PACK';
+        <div className="seccion-impresion-portal">
+          {(() => {
+            const LIMITE_POR_HOJA = 12;
 
-            const idBuscar = String(item.IDArticulo).trim();
-            const condicionAsociada = mapaCondiciones.get(idBuscar);
+            // 1. Mapear los ítems filtrados a objetos de etiquetas
+            const etiquetasMapeadas = datosFiltradosYPagina.todosFiltrados.map((item) => {
+              const precioListaBase = Number(item.PrecioVentaTotal) || 0;
+              const esUnidad = Number(item.IDPresentacion) === 1;
+              const tipoEtiquetaCalculado = esUnidad ? 'NORMAL' : 'PACK';
 
-            const porcentajeDescuento = Number(condicionAsociada?.PorDescRec) || 0;
-            const tieneCondicion = !!condicionAsociada && (porcentajeDescuento > 0 || condicionAsociada.PrecioFinal !== undefined);
+              const idBuscar = String(item.IDArticulo).trim();
+              const condicionAsociada = mapaCondiciones.get(idBuscar);
 
-            let precioConDescuento = 0;
-            if (tieneCondicion) {
-              if (condicionAsociada.PrecioFinal !== undefined && condicionAsociada.PrecioFinal !== null) {
-                precioConDescuento = Number(condicionAsociada.PrecioFinal);
-              } else {
-                precioConDescuento = precioListaBase * (1 - (porcentajeDescuento / 100));
+              const porcentajeDescuento = Number(condicionAsociada?.PorDescRec) || 0;
+              const tieneCondicion = !!condicionAsociada && (porcentajeDescuento > 0 || condicionAsociada.PrecioFinal !== undefined);
+
+              let precioConDescuento = 0;
+              if (tieneCondicion) {
+                if (condicionAsociada.PrecioFinal !== undefined && condicionAsociada.PrecioFinal !== null) {
+                  precioConDescuento = Number(condicionAsociada.PrecioFinal);
+                } else {
+                  precioConDescuento = precioListaBase * (1 - (porcentajeDescuento / 100));
+                }
               }
+
+              const precioSinIvaCalculado = precioListaBase / 1.21;
+
+              return {
+                tipo: tipoEtiquetaCalculado,
+                datos: {
+                  descripcion: item.Descripcion || 'SIN DESCRIPCIÓN',
+                  fecha: item.FechaPrecio ? formatearFecha(item.FechaPrecio) : new Date().toLocaleDateString('es-AR'),
+                  codigoInterno: item.IDArticulo || '—',
+                  codigoBarras: item.Scanner || item.IDArticulo || '—',
+                  scanner: item.Scanner || '—',
+                  precioUnitario: precioListaBase.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  precioSinImpuesto: precioSinIvaCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  CantUni: item.CantUni || 1,
+                  precioCantidad: tieneCondicion 
+                    ? precioConDescuento.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                    : '',
+                  compraMinima: tieneCondicion ? (condicionAsociada.Desde || '') : ''
+                }
+              };
+            });
+
+            // 2. Partir la lista en lotes de 14 por hoja A4
+            const paginas = [];
+            for (let i = 0; i < etiquetasMapeadas.length; i += LIMITE_POR_HOJA) {
+              paginas.push(etiquetasMapeadas.slice(i, i + LIMITE_POR_HOJA));
             }
 
-            const precioSinIvaCalculado = precioListaBase / 1.21;
-
-            const datosMapeados = {
-              descripcion: item.Descripcion || 'SIN DESCRIPCIÓN',
-              fecha: item.FechaPrecio ? formatearFecha(item.FechaPrecio) : new Date().toLocaleDateString('es-AR'),
-              codigoInterno: item.IDArticulo || '—',
-              codigoBarras: item.Scanner || item.IDArticulo || '—',
-              scanner: item.Scanner || '—',
-              
-              precioUnitario: precioListaBase.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-              precioSinImpuesto: precioSinIvaCalculado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-              CantUni: item.CantUni || 1,
-
-              precioCantidad: tieneCondicion 
-                ? precioConDescuento.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-                : '',
-                
-              compraMinima: tieneCondicion ? (condicionAsociada.Desde || '') : ''
-            };
-
-            return (
-              <Etiqueta 
-                key={index} 
-                tipo={tipoEtiquetaCalculado} 
-                datos={datosMapeados} 
-              />
-            );
-          })}
+            // 3. Renderizar las hojas
+            return paginas.map((pagina, indexHoja) => (
+              <div key={indexHoja} className="hoja-a4">
+                <div className="grid-etiquetas">
+                  {pagina.map((itemEtiqueta, indexItem) => (
+                    <Etiqueta 
+                      key={indexItem} 
+                      tipo={itemEtiqueta.tipo} 
+                      datos={itemEtiqueta.datos} 
+                    />
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
         </div>,
         document.body
       )}

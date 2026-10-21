@@ -6,16 +6,16 @@
 }
 
 /* ====================================================
-   ESTILOS DE ETIQUETA - MEDIDAS DE GÓNDOLA (9.7 cm x 3.5 cm)
+   ESTILOS DE ETIQUETA - MEDIDAS AMPLIADAS (9.7 cm x 4.3 cm)
    ==================================================== */
 .etiqueta-container {
   width: 97mm;
-  height: 35mm;
+  height: 43mm;            /* 🌟 Aumentado de 35mm a 43mm */
   max-width: 97mm;
-  max-height: 35mm;
-  border: 1px solid #000000;
-  border-radius: 2px;
-  padding: 1.5mm 2.5mm;
+  max-height: 43mm;
+  border: 1.5px solid #000000;
+  border-radius: 3px;
+  padding: 2mm 3mm;        /* 🌟 Mayor espacio interno */
   box-sizing: border-box !important;
   background-color: #ffffff;
   display: flex;
@@ -28,15 +28,15 @@
   break-inside: avoid;
 }
 
-/* --- FORMATO NORMAL --- */
+/* --- FORMATO NORMAL / CONDICION --- */
 .formato-normal .header {
-  font-size: 8.5pt;
+  font-size: 10pt;          /* 🌟 Aumentado (antes 8.5pt) */
   font-weight: 800;
   text-transform: uppercase;
   border-bottom: 1px solid #000000;
-  padding-bottom: 1px;
-  line-height: 1.05;
-  max-height: 6.5mm;
+  padding-bottom: 2px;
+  line-height: 1.1;
+  max-height: 8.5mm;       /* 🌟 Permite texto más grande de 2 líneas */
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -48,10 +48,10 @@
 .formato-normal .sub-header {
   display: flex;
   justify-content: space-between;
-  font-size: 8.5pt;
+  font-size: 9.5pt;        /* 🌟 Aumentado (antes 8.5pt) */
   font-weight: bold;
-  margin: 0.5mm 0;
-  color: #222222;
+  margin: 1mm 0;
+  color: #111111;
 }
 
 .formato-normal .body-content {
@@ -60,7 +60,7 @@
   align-items: stretch;
   flex: 1;
   border-top: 1px dashed #aaaaaa;
-  padding-top: 0.5mm;
+  padding-top: 1mm;
 }
 
 .formato-normal .col-izq {
@@ -70,9 +70,9 @@
   justify-content: space-between;
   align-items: flex-start;
   height: 100%;
-  font-size: 5.5pt;
+  font-size: 6.5pt;
   border-right: 1px solid #dddddd;
-  padding-right: 1.5mm;
+  padding-right: 2mm;
   box-sizing: border-box;
 }
 
@@ -87,9 +87,9 @@
 }
 
 .formato-normal .titulo-seccion {
-  font-size: 8pt;
+  font-size: 9pt;          /* 🌟 Aumentado (antes 8pt) */
   font-weight: bold;
-  color: #333333;
+  color: #222222;
   line-height: 1;
 }
 
@@ -101,24 +101,24 @@
 }
 
 .formato-normal .simbolo-peso {
-  font-size: 11pt;
+  font-size: 13pt;         /* 🌟 Aumentado (antes 11pt) */
   font-weight: bold;
   margin-right: 1px;
 }
 
 .formato-normal .precio-grande {
-  font-size: 16pt;
+  font-size: 20pt;         /* 🌟 Aumentado (antes 16pt) */
   font-weight: 900;
   letter-spacing: -0.5px;
 }
 
 .formato-normal .pie-texto {
-  font-size: 8pt;
+  font-size: 9pt;          /* 🌟 Aumentado (antes 8pt) */
   font-weight: bold;
 }
 
 .formato-normal .pie-derecho {
-  font-size: 8pt;
+  font-size: 9pt;          /* 🌟 Aumentado (antes 8pt) */
   text-align: right;
   display: flex;
   flex-direction: column;
@@ -128,17 +128,17 @@
 
 /* --- FORMATO PACK --- */
 .formato-pack {
-  border: 1.5px solid #000000;
+  border: 2px solid #000000;
 }
 
 .formato-pack .header {
-  font-size: 8.5pt;
+  font-size: 10pt;         /* 🌟 Aumentado */
   font-weight: 800;
   text-transform: uppercase;
   border-bottom: 1px solid #000000;
-  padding-bottom: 1px;
-  line-height: 1.05;
-  max-height: 6.5mm;
+  padding-bottom: 2px;
+  line-height: 1.1;
+  max-height: 8.5mm;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -150,14 +150,14 @@
 .formato-pack .top-row {
   display: flex;
   justify-content: space-between;
-  font-size: 6.5pt;
+  font-size: 7.5pt;        /* 🌟 Aumentado (antes 6.5pt) */
   font-weight: bold;
   border-bottom: 1px solid #000000;
   padding-bottom: 1px;
 }
 
 .formato-pack .sub-header-ci {
-  font-size: 6.5pt;
+  font-size: 7.5pt;
   font-weight: bold;
   margin-top: 1px;
 }
@@ -171,15 +171,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1mm;
+  margin-top: 1.5mm;
   flex: 1;
 }
 
 .formato-pack .box-pack {
   background-color: #000000;
   color: #ffffff;
-  padding: 2px 5px;
-  border-radius: 2px;
+  padding: 3px 6px;
+  border-radius: 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -187,13 +187,13 @@
 }
 
 .formato-pack .texto-pack {
-  font-size: 10pt;
+  font-size: 11.5pt;       /* 🌟 Aumentado (antes 10pt) */
   font-weight: 900;
   line-height: 1;
 }
 
 .formato-pack .referencia {
-  font-size: 5pt;
+  font-size: 6pt;
   text-transform: uppercase;
 }
 
@@ -206,7 +206,7 @@
 }
 
 .formato-pack .precio-titulo {
-  font-size: 8pt;
+  font-size: 9pt;          /* 🌟 Aumentado */
   font-weight: bold;
   line-height: 1;
 }
@@ -218,18 +218,18 @@
 }
 
 .formato-pack .simbolo-peso {
-  font-size: 11pt;
+  font-size: 13pt;
   font-weight: bold;
 }
 
 .formato-pack .precio-grande {
-  font-size: 16pt;
+  font-size: 20pt;         /* 🌟 Aumentado */
   font-weight: 900;
   line-height: 0.9;
 }
 
 .formato-pack .precio-sin-iva-pack {
-  font-size: 5.5pt;
+  font-size: 6.5pt;
   font-weight: bold;
   text-align: right;
   line-height: 1.1;
@@ -240,25 +240,23 @@
 }
 
 .formato-pack .label-sin-iva {
-  font-size: 4.5pt;
+  font-size: 5.5pt;
   color: #333333;
   font-weight: bold;
 }
 
 .formato-pack .valor-sin-iva {
-  font-size: 5.5pt;
+  font-size: 6.5pt;
   font-weight: bold;
 }
 
-
 /* ====================================================
-   REGLAS DE IMPRESIÓN MULTI-PÁGINA (CORREGIDAS)
+   REGLAS DE IMPRESIÓN MULTI-PÁGINA (12 ETIQUETAS POR HOJA A4)
    ==================================================== */
 @media print {
   @page {
     size: A4 portrait;
-    /* 🌟 Margen real de la página física: se aplica en TODAS las páginas por igual */
-    margin: 8mm 5mm 5mm 5mm !important;
+    margin: 0 !important; /* Desactiva márgenes del navegador para control total */
   }
 
   html, body {
@@ -267,33 +265,44 @@
     background: #ffffff !important;
   }
 
-  .seccion-impresion-portal.grid-etiquetas {
+  .seccion-impresion-portal {
+    display: block !important;
+  }
+
+  /* 🌟 Contenedor de hoja A4 independiente */
+  .hoja-a4 {
+    width: 210mm !important;
+    height: 297mm !important;
+    max-height: 297mm !important;
+    box-sizing: border-box !important;
+    padding-top: 15mm !important;   /* 🌟 Espacio superior garantizado en produccion */
+    padding-bottom: 5mm !important;
+    padding-left: 5mm !important;
+    padding-right: 5mm !important;
+    page-break-after: always !important; /* Salto estricto de hoja */
+    break-after: page !important;
+    overflow: hidden !important;
+  }
+
+  .grid-etiquetas {
     display: grid !important;
     grid-template-columns: repeat(2, 97mm) !important;
-    grid-auto-rows: 35mm !important;
-    gap: 2mm 4mm !important; /* Gap vertical reducido a 2mm para asegurar ajuste en A4 */
-    padding: 0 !important;   /* El margen superior ahora lo maneja @page */
+    grid-auto-rows: 43mm !important; /* 🌟 Fila ajustada a 43mm */
+    gap: 2mm 4mm !important;
     justify-content: center !important;
     align-content: start !important;
-    background: #ffffff !important;
     box-sizing: border-box !important;
   }
 
   .etiqueta-container {
     width: 97mm !important;
-    height: 35mm !important;
+    height: 43mm !important;
     max-width: 97mm !important;
-    max-height: 35mm !important;
-    padding: 1.5mm 2.5mm !important;
+    max-height: 43mm !important;
+    padding: 2mm 3mm !important;
     box-sizing: border-box !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     overflow: hidden !important;
-  }
-
-  /* 🌟 Salto de página estricto y limpio cada 14 etiquetas */
-  .seccion-impresion-portal.grid-etiquetas > .etiqueta-container:nth-child(14n) {
-    page-break-after: always !important;
-    break-after: page !important;
   }
 }

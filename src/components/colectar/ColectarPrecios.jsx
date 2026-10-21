@@ -565,12 +565,27 @@ const ColectarPrecios = () => {
         </div>
       )}
 
-      {/* ---------- SECCIÓN DE IMPRESIÓN (UNIFICADA CON PORTAL AL BODY) ---------- */}
+      {/* ---------- SECCIÓN DE IMPRESIÓN (PAGINACIÓN A4 EN BLOQUES DE 12) ---------- */}
       {createPortal(
-        <div className="seccion-impresion-portal grid-etiquetas">
-          {etiquetasMapeadas.map((e, i) => (
-            <Etiqueta key={i} tipo={e.tipo} datos={e.datos} />
-          ))}
+        <div className="seccion-impresion-portal">
+          {(() => {
+            const paginas = [];
+            const LIMITE_POR_HOJA = 12; // 🌟 CAMBIADO A 12 ETIQUETAS POR HOJA
+
+            for (let i = 0; i < etiquetasMapeadas.length; i += LIMITE_POR_HOJA) {
+              paginas.push(etiquetasMapeadas.slice(i, i + LIMITE_POR_HOJA));
+            }
+
+            return paginas.map((pagina, indexHoja) => (
+              <div key={indexHoja} className="hoja-a4">
+                <div className="grid-etiquetas">
+                  {pagina.map((e, indexItem) => (
+                    <Etiqueta key={indexItem} tipo={e.tipo} datos={e.datos} />
+                  ))}
+                </div>
+              </div>
+            ));
+          })()}
         </div>,
         document.body
       )}
