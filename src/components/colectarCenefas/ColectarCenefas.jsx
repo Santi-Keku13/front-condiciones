@@ -328,10 +328,10 @@ const ColectarCenefas = () => {
             className={`${styles.tipoBtn} ${tipoCenefa === t ? styles.tipoBtnActive : ""}`}
             onClick={() => setTipoCenefa(t)}
           >
-            {t === 1 && "Tipo Oferta 1 — 99×138"}
-            {t === 2 && "Tipo Oferta 2 — 99×93"}
-            {t === 3 && "Tipo Oferta 3 — 198×93"}
-            {t === 4 && "Tipo Precio Único 4 — 198×93"}
+            {t === 1 && "Cenefa antes y ahora Cuadradita"}
+            {t === 2 && "Cenefa antes y ahora Alargadita"}
+            {t === 3 && "Cenefa antes y ahora 3 x 1"}
+            {t === 4 && "Cenefa Básica 3 x 1"}
           </button>
         ))}
       </div>
