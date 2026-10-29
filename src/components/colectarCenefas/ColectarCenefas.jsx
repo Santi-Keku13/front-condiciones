@@ -16,11 +16,19 @@ const formatoPrecio = (n) =>
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-// 🌟 Mapea un item del JSON al formato de la cenefa
+const extraerCantidadMinima = (texto = "") => {
+  const m = texto.match(/LLEVANDO\s+(\d+)/i);
+  return m ? m[1] : "2";
+};
+
 const mapearACenefa = (item, tipoCenefa) => {
   const precioAntes = Number(item.precio5 ?? item.precio ?? 0);
   const precioAhora = Number(item.precioFinal ?? 0);
   const hayOferta = precioAhora > 0 && precioAntes > 0 && precioAhora < precioAntes;
+
+  const tieneCondicion = item.tieneCondicion === true;
+  const cantMinima = item.cantMinima || extraerCantidadMinima(item.condicionTexto || "") || "2";
+  const precioCondicionVal = Number(item.precioCondicion || 0);
 
   return {
     tipo: tipoCenefa,
@@ -31,6 +39,11 @@ const mapearACenefa = (item, tipoCenefa) => {
       precioAhora: formatoPrecio(precioAhora),
       codigo: item.idArticulo || item.id || item.codigo || "",
       ean: item.scanner || item.ean || "",
+      
+      // 🌟 Mapeo exacto para el Tipo 5 usando tu objeto JSON
+      precioRegular: formatoPrecio(precioAhora > 0 ? precioAhora : precioAntes),
+      precioCondicion: tieneCondicion ? formatoPrecio(precioCondicionVal) : formatoPrecio(precioAhora),
+      cantMinima: cantMinima,
     },
   };
 };
@@ -53,7 +66,7 @@ const ColectarCenefas = () => {
   const [cargandoCache, setCargandoCache] = useState(true);
   const [errorCache, setErrorCache] = useState(null);
 
-  // 🌟 Tipo de cenefa seleccionado (1, 2 o 3)
+  // 🌟 Tipo de cenefa seleccionado (1, 2, 3, 4 o 5)
   const [tipoCenefa, setTipoCenefa] = useState(1);
 
   const [codigoInput, setCodigoInput] = useState("");
@@ -321,7 +334,7 @@ const ColectarCenefas = () => {
       {/* ---------- SELECTOR DE TIPO DE CENEFA ---------- */}
       <div className={styles.tipoSelector}>
         <span className={styles.tipoLabel}>Tipo de cenefa:</span>
-        {[1, 2, 3, 4].map((t) => (
+        {[1, 2, 3, 4, 5].map((t) => (
           <button
             key={t}
             type="button"
@@ -332,6 +345,7 @@ const ColectarCenefas = () => {
             {t === 2 && "Cenefa antes y ahora Alargadita"}
             {t === 3 && "Cenefa antes y ahora 3 x 1"}
             {t === 4 && "Cenefa Básica 3 x 1"}
+            {t === 5 && "Condición Comercial"}
           </button>
         ))}
       </div>
