@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styles from './Condiciones.module.css';
 import CambiosPrecios from '../cambiosPrecios/CambiosPrecios';
 import ColectarPrecios from '../colectar/ColectarPrecios';
-import { useNotification } from '../../utilidades/useNotification';
-import { API_URL, ENDPOINTS } from "../../config";   // 🌟 todo centralizado
 import ColectarCenefas from '../colectarCenefas/ColectarCenefas';
+import OfertasComparativa from '../ofertasComparativas/OfertasComparativas'; // 🌟 IMPORTACIÓN DEL NUEVO COMPONENTE
+import { useNotification } from '../../utilidades/useNotification';
+import { API_URL, ENDPOINTS } from "../../config";
 
 function Condiciones() {
   const [pestanaActiva, setPestanaActiva] = useState('CONDICIONES');
@@ -78,7 +79,6 @@ function Condiciones() {
     setPaginaActual(1);
   }, [busquedaInput, filtroEstado, listasSeleccionadas, fechaDesde, fechaHasta, tipoFiltroFecha, sucursal, pestanaActiva]);
 
-  
   // Lógica Semáforo Pestaña 1
   const obtenerEstadoVigencia = (fechaLimite) => {
     if (!fechaLimite) return { id: 'SIN_LIMITE', texto: 'Sin Límite', clase: styles.statusSinLimite };
@@ -195,6 +195,14 @@ function Condiciones() {
           className={`${styles.tabLink} ${pestanaActiva === 'CENEFAS' ? styles.tabLinkActive : ''}`}
         >
           Colector de Cenefas
+        </button>
+
+        {/* 🌟 NUEVA PESTAÑA: OFERTAS COMPARATIVAS */}
+        <button
+          onClick={() => setPestanaActiva('OFERTAS')}
+          className={`${styles.tabLink} ${pestanaActiva === 'OFERTAS' ? styles.tabLinkActive : ''}`}
+        >
+          Ofertas Comparativas
         </button>
       </div>
 
@@ -388,9 +396,15 @@ function Condiciones() {
         <ColectarPrecios apiBase={API_URL} />
       )}
 
+      {/* --- CONTENIDO DE PESTAÑA 4: CENEFAS --- */}
       {pestanaActiva === 'CENEFAS' && (
-          <ColectarCenefas />
-        )}
+        <ColectarCenefas />
+      )}
+
+      {/* 🌟 CONTENIDO DE PESTAÑA 5: OFERTAS COMPARATIVAS */}
+      {pestanaActiva === 'OFERTAS' && (
+        <OfertasComparativa />
+      )}
 
       {/* --- MODAL COMPARTIDO Y DINÁMICO --- */}
       {modalData && (
