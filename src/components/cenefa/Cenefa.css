@@ -632,15 +632,20 @@
 /* ============================================================
    DISTRIBUCIÓN DE IMPRESIÓN PARA CENEFAS (AJUSTADA A4)
    ============================================================ */
+/* ============================================================
+   DISTRIBUCIÓN DE IMPRESIÓN PARA CENEFAS A4 (CORREGIDO)
+   ============================================================ */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0 !important; /* Mantenemos margen 0 controlado por CSS */
+    margin: 0 !important;
   }
 
   html, body {
     margin: 0 !important;
     padding: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
     background: #ffffff !important;
   }
 
@@ -668,17 +673,20 @@
     background: #ffffff !important;
   }
 
-/* ---------- TIPOS 3, 4 Y 5: CONTROL DE ESPACIO VERTICAL GARANTIZADO EN A4 ---------- */
+  /* ---------- TIPOS 3, 4 Y 5: ALINEACIÓN PERFECTA 3 X HOJA A4 ---------- */
   .seccion-impresion-portal.grid-tipo-3,
   .seccion-impresion-portal.grid-tipo-4,
   .seccion-impresion-portal.grid-tipo-5 {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important; /* 🌟 Distribuye las 3 cenefas proporcionalmente */
+    align-items: center !important;
     width: 210mm !important;
-    height: auto !important;
-    padding: 0 !important;
-    margin: 0 auto !important;
-    background: transparent !important;
-    overflow: visible !important;
+    height: 297mm !important;                 /* 🌟 Alto exacto de la hoja A4 */
+    padding: 12mm 0 12mm 0 !important;          /* 🌟 Margen superior e inferior de seguridad */
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    break-after: page !important;
   }
 
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3,
@@ -686,33 +694,23 @@
   .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5 {
     width: 180mm !important;
     height: 65mm !important;
-    margin: 0 auto !important;
+    margin: 0 !important;                      /* 🌟 Anulamos los margin-top fijos */
     box-sizing: border-box !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  /* 🌟 PRIMERA CENEFA (#1, #4, #7...) -> Inicio exacto en 12mm */
+  /* Anular selectores previos de márgenes manuales */
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n+1),
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n+1),
-  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+1) {
-    margin-top: 12mm !important;
-  }
-
-  /* 🌟 SEGUNDA CENEFA (#2, #5, #8...) -> Separación de 28mm */
+  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+1),
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n+2),
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n+2),
-  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+2) {
-    margin-top: 28mm !important;
-  }
-
-  /* 🌟 TERCERA CENEFA (#3, #6, #9...) -> Separación de 28mm para evitar que se corte abajo */
+  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+2),
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n),
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n),
   .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n) {
-    margin-top: 28mm !important;
-    margin-bottom: 15 !important;
-    page-break-after: always !important;
-    break-after: page !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 }
