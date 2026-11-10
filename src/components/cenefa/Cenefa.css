@@ -642,7 +642,9 @@
     margin: 0 !important;
     padding: 0 !important;
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     background: #ffffff !important;
   }
 
@@ -670,52 +672,60 @@
     background: #ffffff !important;
   }
 
-  /* ---------- TIPOS 3, 4 Y 5: ESTRUCTURA A4 BASE ---------- */
+  /* ---------- TIPOS 3, 4 Y 5: UNA HOJA A4 POR CONTENEDOR ----------
+     Posiciones fijas (absolute): no dependen de flex, space-between
+     ni de transforms, así que cada hoja queda idéntica a la primera. */
   .seccion-impresion-portal.grid-tipo-3,
   .seccion-impresion-portal.grid-tipo-4,
   .seccion-impresion-portal.grid-tipo-5 {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-    align-items: center !important;
+    display: block !important;
+    position: relative !important;
     width: 210mm !important;
-    height: 297mm !important;
-    padding: 17mm 0 7mm 0 !important;
+    height: 296mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
     box-sizing: border-box !important;
     page-break-after: always !important;
     break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* La última hoja no fuerza salto (evita hoja en blanco al final) */
+  .seccion-impresion-portal.grid-tipo-3:last-child,
+  .seccion-impresion-portal.grid-tipo-4:last-child,
+  .seccion-impresion-portal.grid-tipo-5:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3,
   .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4,
   .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5 {
+    position: absolute !important;
+    left: 15mm !important;            /* (210 - 180) / 2 */
     width: 180mm !important;
     height: 65mm !important;
     margin: 0 !important;
+    transform: none !important;
     box-sizing: border-box !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  /* ---------- CALIBRACIÓN EXCLUSIVA CONDICIÓN COMERCIAL (TIPO 5) ---------- */
-  /* 🌟 Primera cenefa Tipo 5: baja 17mm */
-  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+1) {
-    transform: translateY(17mm) !important;
-  }
+  /* ---------- TIPOS 3 Y 4: posiciones verticales ---------- */
+  .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n+1),
+  .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n+1) { top: 17mm !important; }
 
-  /* 🌟 Segunda cenefa Tipo 5: baja 8mm */
-  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+2) {
-    transform: translateY(8mm) !important;
-  }
+  .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n+2),
+  .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n+2) { top: 121mm !important; }
 
-  /* 🌟 Tercera cenefa Tipo 5: baja 5mm respecto a la posición anterior (1mm hacia abajo) */
-  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n) {
-    transform: translateY(1mm) !important;
-  }
-
-  /* ---------- TERCERA CENEFA PARA TIPOS 3 Y 4 (SE MANTIENE IGUAL) ---------- */
   .seccion-impresion-portal.grid-tipo-3 .cenefa-tipo-3:nth-child(3n),
-  .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n) {
-    transform: translateY(-4mm) !important;
-  }
+  .seccion-impresion-portal.grid-tipo-4 .cenefa-tipo-4:nth-child(3n) { top: 221mm !important; }
+
+  /* ---------- TIPO 5 (Condición Comercial): posiciones verticales ---------- */
+  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+1) { top: 34mm !important; }
+  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n+2) { top: 129mm !important; }
+  .seccion-impresion-portal.grid-tipo-5 .cenefa-tipo-5:nth-child(3n)   { top: 226mm !important; }
 }
